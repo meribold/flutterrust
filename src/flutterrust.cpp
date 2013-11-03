@@ -1,6 +1,5 @@
 #include <fstream>
 #include <iostream>
-#include <locale>          // std::isalpha
 #include <boost/regex/icu.hpp>
 #include <boost/regex.hpp>
 #include <string>
@@ -10,14 +9,16 @@
 
 #include "creatureTable.hpp"
 
-typedef std::tuple<std::string, int, int, int, std::string, std::string> CreatureType;
+typedef std::tuple<std::string, int, int, int, std::string, std::string>
+CreatureType;
 
 auto getName = [](const std::string& s) -> std::string {
 	if (s.empty()) throw std::string{"name expected, got nothing"};
 	static std::string pattern{R"([[:L*:] ]+)"};
 	static auto regEx = boost::make_u32regex(pattern);
 	if (!boost::u32regex_match(s, regEx)) {
-		throw std::string{"regex '" + pattern + "' doesn't match name '" + s + '\''};
+		throw std::string{"regex '" + pattern + "' doesn't match name '" + s +
+			"'"};
 	}
 	return s;
 };
@@ -45,7 +46,8 @@ auto getTraits = [](const std::string& s) -> std::string {
 	static std::string pattern{R"(([A-Za-z0-9_]+( |$))*)"};
 	static auto regEx = boost::make_u32regex(pattern);
 	if (!boost::u32regex_match(s, regEx)) {
-		throw std::string{"regex '" + pattern + "' doesn't match traits '" + s + '\''};
+		throw std::string{"regex '" + pattern + "' doesn't match traits '" + s +
+			"'"};
 	}
 	return s;
 };
@@ -66,12 +68,14 @@ auto getPath = [](const std::string& s) -> std::string {
 	// Only accept POSIX "Fully portable filenames".
 	regEx = R"(([A-Za-z0-9._][A-Za-z0-9._-]{0,13}(/+|$))*)";
 	if (!boost::regex_match(s, regEx)) {
-		throw std::string{"regex '" + regEx.str() + "' doesn't match filename '" + s + "'"};
+		throw std::string{"regex '" + regEx.str() + "' doesn't match filename '" +
+			s + "'"};
 	}
 	return s;
 };
 
-auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getTraits, getPath);
+auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getTraits,
+	getPath);
 
 int main(int argc, char* argv[])
 {
@@ -95,18 +99,19 @@ int main(int argc, char* argv[])
 	std::vector<CreatureType> creatureTypes;
 
 	try {
-		creatureTypes = loadCreatureTypes<CreatureType>(std::move(iStream), extractors, errors);
+		creatureTypes = loadCreatureTypes<CreatureType>(std::move(iStream),
+			extractors, errors);
 	} catch (const std::ios_base::failure& e) {
-		std::cerr << argv[0] << ": exception thrown while parsing creature table: "
-		          << e.what() << std::endl;
+		std::cerr << argv[0] << ": exception thrown while parsing " << argv[1]
+		          << ": " << e.what() << std::endl;
 		//return e.code();
 	} catch (const std::exception& e) {
-		std::cerr << argv[0] << ": exception thrown while parsing creature table: "
-		          << e.what() << std::endl;
+		std::cerr << argv[0] << ": exception thrown while parsing " << argv[1]
+		          << ": " << e.what() << std::endl;
 		return 3;
 	} catch (...) {
-		std::cerr << argv[0] << ": unknown exception thrown while parsing creature table"
-		          << std::endl;
+		std::cerr << argv[0] << ": unknown exception thrown while parsing "
+		          << argv[1] << std::endl;
 		return 3;
 	}
 	printCreatureTypes(creatureTypes);

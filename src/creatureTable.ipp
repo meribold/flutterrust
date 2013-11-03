@@ -56,7 +56,8 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
 			if (fieldIndex < fieldCount - 1 /*&& column > 1*/) {
 				// Missing tokens.
 				std::cerr << line << ':' << column
-				          << ": additional entry expected before linebreak" << std::endl;
+				          << ": additional entry expected before linebreak"
+				          << std::endl;
 			}
 			else if (fieldIndex == fieldCount - 1) {
 				creatureTypes.push_back(CreatureType{});
@@ -80,7 +81,8 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
 			if (++fieldIndex > fieldCount - 1) {
 				// To many tokens.
 				std::cerr << line << ':' << column
-				          << ": entry expected to be final; got \'" << nextChar << '\'' << std::endl;
+				          << ": entry expected to be final; got \'" << nextChar
+				          << '\'' << std::endl;
 				iStream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 				iStream.unget();
 				continue;
