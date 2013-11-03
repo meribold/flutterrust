@@ -68,8 +68,14 @@ auto getPath = [](const std::string& s) -> std::string {
 	// Only accept POSIX "Fully portable filenames".
 	regEx = R"(([A-Za-z0-9._][A-Za-z0-9._-]{0,13}(/+|$))*)";
 	if (!boost::regex_match(s, regEx)) {
-		throw std::string{"regex '" + regEx.str() + "' doesn't match filename '" +
-			s + "'"};
+		throw std::string{"path '" + s + "' should be made up of POSIX \"fully " +
+			"portable filenames\""};
+	}
+
+	// Don't accept consecutive slashes.
+	regEx = "//";
+	if (boost::regex_search(s, regEx)) {
+		throw std::string{"path '" + s + "' contains consecutive slashes"};
 	}
 	return s;
 };
