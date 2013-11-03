@@ -13,7 +13,7 @@ namespace {
 	                 const std::array<std::string, sizeof... (Entries)>&) { }
 
 	template<std::size_t i = 0, typename... Entries, typename... Extractors>
-	inline typename std::enable_if<i < sizeof...(Entries), void>::type
+	inline typename std::enable_if<i < sizeof... (Entries), void>::type
 	loadCreatureType(std::tuple<Entries...>& creatureType,
 	                 std::tuple<Extractors...>& extractors,
 	                 const std::array<std::string, sizeof... (Entries)>& fields)
@@ -101,7 +101,7 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
 // http://stackoverflow.com/questions/1198260/iterate-over-tuple
 // http://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
 template<std::size_t i = 0, typename... Tp>
-inline typename std::enable_if<i == sizeof...(Tp) - 1, void>::type
+inline typename std::enable_if<i == sizeof... (Tp) - 1, void>::type
 printCreatureType(const std::tuple<Tp...>& t)
 {
 	std::cout << '(' << std::get<i>(t) << ')' << std::endl;
@@ -115,10 +115,20 @@ printCreatureType(const std::tuple<Tp...>& t)
 	printCreatureType<i + 1, Tp...>(t);
 }
 
-template <typename CreatureType>
-void printCreatureTypes(const std::vector<CreatureType>& vector) {
-	for (const auto& creatureType : vector) {
-		printCreatureType(creatureType);
-	}
+template<template <typename T> class Function,
+	std::size_t i = 0, typename... Tuple>
+inline typename std::enable_if<i == sizeof... (Tuple), void>::type
+for_each(const std::tuple<Tuple...>&) {}
+
+template<template <typename T> class Function,
+	std::size_t i = 0, typename... Tuple>
+inline typename std::enable_if<i < sizeof... (Tuple), void>::type
+for_each(const std::tuple<Tuple...>& t)
+{
+	Function<typename std::tuple_element<i, std::tuple<Tuple...>>::type> f{};
+	f(std::get<i>(t));
+	for_each<Function, i + 1>(t);
+	//for_each<Function, i + 1>(t, Function<typename std::tuple_element<i + 1,
+		//std::tuple<Tuple...>>::type>{});
 }
 

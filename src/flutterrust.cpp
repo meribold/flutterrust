@@ -83,6 +83,20 @@ auto getPath = [](const std::string& s) -> std::string {
 auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getTraits,
 	getPath);
 
+	template <typename T>
+	struct Print {
+		void operator()(const T& t) {
+			std::cout << "'" << t << "', ";
+		}
+	};
+
+	template <>
+	struct Print<int> {
+		void operator()(const int& i) {
+			std::cout << i << ", ";
+		}
+	};
+
 int main(int argc, char* argv[])
 {
 	// Input files should use UTF-8 encoding.
@@ -121,14 +135,30 @@ int main(int argc, char* argv[])
 		return 3;
 	}
 
+	// http://stackoverflow.com/questions/3072795/how-to-count-lines-of-a-file-in
+	iStream.seekg(0);
+	int lines = std::count(std::istreambuf_iterator<char>(iStream),
+		std::istreambuf_iterator<char>(), '\n');
+
+	std::cout << argv[0] << ": done parsing " << argv[1] << ":\n  "
+	          << creatureTypes.size()
+	          << " creature types imported successfully, "
+	          << lines - creatureTypes.size() << " lines skipped" << std::endl;
+
 	if (!errors.empty()) {
 		std::cerr << argv[0] << ": errors while parsing " << argv[1] << ':'
 		          << std::endl;
 		for (const auto& error : errors) {
-			std::cerr << error << std::endl;
+			std::cerr << "  " << error << std::endl;
 		}
 	}
 
-	printCreatureTypes(creatureTypes);
+	std::cout << argv[0] << ": imported creature types:" << std::endl;
+	for (const auto& creatureType : creatureTypes) {
+		std::cout << "  ";
+		for_each<Print>(creatureType);
+		std::cout << std::endl;
+		//printCreatureType(creatureType);
+	}
 }
 
