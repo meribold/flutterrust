@@ -16,7 +16,7 @@ SHELL := /bin/sh # - section 7.2.1 of the GNU Coding Standards
 CXX      = g++
 CPPFLAGS = -Wall -Wextra -pedantic -g -O
 CXXFLAGS = -std=c++11 -Wold-style-cast
-LDFLAGS  = $(icu-config --ldflags) -g -O
+LDFLAGS  = -g -O
 LDLIBS   =
 ARFLAGS  = cs
 

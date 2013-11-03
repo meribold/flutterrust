@@ -14,9 +14,9 @@ libraries    += $(local_library)
 programs     += $(local_program)
 
 $(local_program) : all_ldflags  = $(addprefix -L,$(ld_dirs)) $(LDFLAGS)
-$(local_program) : all_ldlibs   = -lboost_regex \
+$(local_program) : all_ldlibs   = $(LDLIBS) -lboost_regex \
 	$(shell icu-config --ldflags-libsonly) \
-	$(patsubst lib%.a,-l%,$(notdir $(libraries))) $(LDLIBS)
+	$(patsubst lib%.a,-l%,$(notdir $(libraries)))
 
 $(local_program): $(objects) $(libraries)
 	$(CXX) $(all_ldflags) $(objects) $(all_ldlibs) -o $(local_program)
