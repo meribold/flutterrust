@@ -50,14 +50,13 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
 
 	std::array<std::string, fieldCount> fields;
 
-	//while (iStream && !iStream.eof()) {
 	while ((nextChar = iStream.peek()) != std::istream::traits_type::eof()) {
 		if (nextChar == '\n') {
 			if (fieldIndex < fieldCount - 1 /*&& column > 1*/) {
 				// Missing tokens.
-				std::cerr << line << ':' << column
-				          << ": additional entry expected before linebreak"
-				          << std::endl;
+				errors.push_back(std::to_string(line) + ":" +
+					std::to_string(column) +
+					": additional entry expected before linebreak");
 			}
 			else if (fieldIndex == fieldCount - 1) {
 				creatureTypes.push_back(CreatureType{});
@@ -65,11 +64,11 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
 					loadCreatureType(creatureTypes.back(), extractors, fields);
 				} catch (const std::string& s) {
 					creatureTypes.pop_back();
-					std::cerr << line << ": parsing error: " << s
-					          << std::endl;
+					errors.push_back(std::to_string(line) + ": parsing error: " + s);
 				} catch (...) {
 					creatureTypes.pop_back();
-					std::cerr << line << ": parsing error" << std::endl;
+					errors.push_back(std::to_string(line) +
+						": unknown parsing error: ");
 				}
 			}
 			for (auto& s : fields) {
@@ -80,9 +79,9 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
 		else if (nextChar == ',') {
 			if (++fieldIndex > fieldCount - 1) {
 				// To many tokens.
-				std::cerr << line << ':' << column
-				          << ": entry expected to be final; got \'" << nextChar
-				          << '\'' << std::endl;
+				errors.push_back(std::to_string(line) + ":" +
+					std::to_string(column) + ": entry expected to be final; got \'" +
+					nextChar + "'");
 				iStream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 				iStream.unget();
 				continue;

@@ -114,6 +114,15 @@ int main(int argc, char* argv[])
 		          << argv[1] << std::endl;
 		return 3;
 	}
+
+	if (!errors.empty()) {
+		std::cerr << argv[0] << ": errors while parsing " << argv[1] << ':'
+		          << std::endl;
+		for (const auto& error : errors) {
+			std::cerr << error << std::endl;
+		}
+	}
+
 	printCreatureTypes(creatureTypes);
 }
 
