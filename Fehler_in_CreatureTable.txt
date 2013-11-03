@@ -1,0 +1,9 @@
+Leerzeilen am Ende und zwischendrin: Zeilen 5,20 und am Ende
+Spaltenfehler: Zeile 10, 12, 13, 15, 24
+nicht-numerische Zeichen in rein numerischen Feldern: Zeile 23847
+Buchstaben oder Komma innerhalb einer Zahl: Zeile 2, Zeile 3
+\n als Backslash und n am Ende der Zeile: Zeile 22
+Sonderzeichen: Zeile 21
+Zeile 16: Keine Eigenschaften, in Ordnung
+Zusätzliche Leerzeichen: Zeile 6, 19
+Pfad falsch: Zeile 23, 14

@@ -1,0 +1,8 @@
+# Ignore object files and static or dynamic libraries.
+*.o
+*.a
+*.so
+
+# Ignore prerequisite files automatically generated for GNU Make.
+*.d
+

@@ -1,0 +1,27 @@
+Algen,2,0,1000,Wasserbewohner Pflanze,wasser/plankton.jpg
+Seetang,3.5,0,800,Wasserbewohner Pflanze,wasser/seetang.jpg
+Plankton,1,0,Kurz,Wasserbewohner Pflanze,wasser/plankton.jpg
+Gras,2,0,500,Landbewohner Pflanze,land/gras.jpg
+
+Kaktus,5,0,1200, landbewohner            pflanze,land/kaktus.jpg
+Gebüsch,7,0,1500,Landbewohner Pflanze,land/busch.jpg
+Sonnenblume,4,0,600,Landbewohner Pflanze,land/blumen_wiese/sonnenblume.jpg
+Eiche,20,0,1800,Landbewohner Pflanze,land/eiche.jpg
+Obstbaum,10,0,1500,Landbewohner,Pflanze,/home/bilder/birne.jpg
+Tannenbaum,10,0,2000,Landbewohner Pflanze,land/tanne.jpg
+Wels,50,40,400,,wasser/wels.jpg
+Forelle,30,70,300,Wasserbewohner Pflanzenfresser
+Krabbe,80,30,450,Wasserbewohner Pflanzenfresser,wasser//krabbe.jpg
+Hai,120,,75,600,Wasserbewohner Fleischfresser,wasser/hai.jpg
+Delphin,80,80,800,,land/delphin.jpg
+Kuh,120,25,600,Landbewohner Pflanzenfresser,land/kuh.jpg
+Pferd,140,120,550,Landbewohner Pflanzenfresser,land/pferd.jpg
+Emu,70,180,350,  Landbewohner  ,land/emu.jpg
+
+Schaf,70,30,400,Landbewohner Pflanzenfresser Ängstlich,land/schaf.jpg
+Hund,100,50,700,Landbewohner Fleischfresser,land/hund.jpg\n
+Bär,250,30,650,Landbewohner Fleischfresser Brummt,../land/ursus.jpg
+,Tiger,90,200,600,Landbewohner Fleischfresser,land/tiger.jpg
+
+
+
