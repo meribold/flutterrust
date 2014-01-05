@@ -1,6 +1,6 @@
 local_directory := src
 
-local_program := flutterrust
+local_program := task1
 
 local_sources := $(shell find $(local_directory) -maxdepth 1 -name '*.cpp')
 local_prereqs := $(local_sources:.cpp=.d)
