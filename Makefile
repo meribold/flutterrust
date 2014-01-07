@@ -80,4 +80,4 @@ $(prereq_files):
 $(objects): $$(subst .o,.d,$$@)
 	$(CXX) -MMD $(all_cppflags) $(all_cxxflags) $(subst .o,.cpp,$@) -o $@
 
-# vim: tw=80 sw=3
+# vim: tw=100 sw=3 noet
