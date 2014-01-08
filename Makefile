@@ -33,7 +33,7 @@ all_cppflags = $(CPPFLAGS)
 all_cxxflags = $(CXXFLAGS) -c
 all_ldflags  = $(LDFLAGS)
 all_ldlibs   = $(LDLIBS)
-all_arflags  = r$(ARFLAGS)
+all_arflags  = $(ARFLAGS)
 
 # Explicitly initialize as simple variables as recursive ones are the default.
 sources   :=
@@ -50,14 +50,14 @@ objects      := $(sources:.cpp=.o)
 
 # All whitespace-separated words in the working directory and its subdirectories
 # that do match any of the pattern words $(prereq_files). file names shall not
-# contain the '%' character.
+# contain the "%" character.
 existant_prereqs := \
    $(filter $(prereq_files),$(shell find -regex '.*\.d$$' -printf '%P\n'))
 
-# Was any goal (other than 'clean') specified on the command line? None counts
-# as 'all'.
+# Was any goal (other than `clean`) specified on the command line? None counts
+# as `all`.
 ifneq ($(filter-out clean,$(or $(MAKECMDGOALS),all)),)
-   # Include existant makefiles of prerequisite . After reading in all those
+   # Include existant makefiles of prerequisites. After reading in all those
    # files none of them will have to be updated. Non-existant prerequisite files
    # will be build along with their respective object files.
    include $(existant_prereqs)
