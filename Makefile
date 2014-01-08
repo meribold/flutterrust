@@ -29,11 +29,11 @@ subdirectory = $(patsubst %/Module.mk,%, \
 
 # See section 7.2.3 'Varialbes for Specifying Commands' of the GNU Coding
 # Standards.
-all_cppflags = $(CPPFLAGS)
-all_cxxflags = $(CXXFLAGS) -c
-all_ldflags  = $(LDFLAGS)
-all_ldlibs   = $(LDLIBS)
-all_arflags  = $(ARFLAGS)
+all_cppflags := $(CPPFLAGS)
+all_cxxflags := $(CXXFLAGS) -c
+all_ldflags  := $(LDFLAGS)
+all_ldlibs   := $(LDLIBS)
+all_arflags  := $(ARFLAGS)
 
 # Explicitly initialize as simple variables as recursive ones are the default.
 sources   :=
