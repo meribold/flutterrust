@@ -1,5 +1,6 @@
 # Top-level makefile; includes all Module.mk files it can find in any of the
-# subdirectories. Written for GNU Make.
+# subdirectories. Partly based on the nonrecursive make from "Managing Projects
+# With GNU Make". Written for GNU Make and not expected to be portable.
 
 # Parameters controlling inplicit rules (as listed in section 10.3 of the GNU
 # Make Manual) or that the user can override with command options use upper case
@@ -13,14 +14,18 @@ SHELL := /bin/sh # - section 7.2.1 of the GNU Coding Standards
 # the GNU Coding Standards.
 .SUFFICES:
 
-CXX      = g++
-CPPFLAGS = -Wall -Wextra -pedantic -g -O
-CXXFLAGS = -std=c++11 -Wold-style-cast
-LDFLAGS  = -g -O
-LDLIBS   =
-ARFLAGS  = cs
+CXX      ?= g++
+CPPFLAGS += -Wall -Wextra -pedantic -g -O
+CXXFLAGS += -std=c++11 -Wold-style-cast
+LDFLAGS  += -g -O
+LDLIBS   +=
+ARFLAGS  += cs
 
 ################################################################################
+
+# Taken from "Managing Projects With GNU Make".
+subdirectory = $(patsubst %/Module.mk,%, \
+   $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 
 # See section 7.2.3 'Varialbes for Specifying Commands' of the GNU Coding
 # Standards.
@@ -30,15 +35,18 @@ all_ldflags  = $(LDFLAGS)
 all_ldlibs   = $(LDLIBS)
 all_arflags  = r$(ARFLAGS)
 
-sources      :=
-prereq_files := $(sources:.cpp=.d)
-objects      := $(sources:.cpp=.o)
-libraries    :=
-programs     :=
+# Explicitly initialize as simple variables as recursive ones are the default.
+sources   :=
+libraries :=
+programs  :=
 
+# Set the default target.
 all:
 
 include $(shell find -name 'Module.mk')
+
+prereq_files := $(sources:.cpp=.d)
+objects      := $(sources:.cpp=.o)
 
 # All whitespace-separated words in the working directory and its subdirectories
 # that do match any of the pattern words $(prereq_files). file names shall not
@@ -80,4 +88,4 @@ $(prereq_files):
 $(objects): $$(subst .o,.d,$$@)
 	$(CXX) -MMD $(all_cppflags) $(all_cxxflags) $(subst .o,.cpp,$@) -o $@
 
-# vim: tw=100 sw=3 noet
+# vim: tw=80 sw=3 noet
