@@ -10,7 +10,7 @@
 # "Every Makefile should contain this line..." - section 7.2.1 of the GNU Coding Standards
 SHELL := /bin/sh
 
-# Clear the suffix list; no suffix rules in this makefile. See section 7.2.1 of the GNU
+# Clear the suffix list; no suffix rules in this makefile.  See section 7.2.1 of the GNU
 # Coding Standards.
 .SUFFICES:
 
