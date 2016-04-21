@@ -98,7 +98,7 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
    return creatureTypes;
 }
 
-// http://stackoverflow.com/questions/1198260/iterate-over-tuple
+// http://stackoverflow.com/q/1198260/iterate-over-tuple
 // http://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
 template<std::size_t i = 0, typename... Ts>
 inline typename std::enable_if<i == sizeof...(Ts) - 1, void>::type
@@ -115,13 +115,12 @@ printCreatureType(const std::tuple<Ts...>& t)
    printCreatureType<i + 1, Ts...>(t);
 }
 
-template<template <typename T> class Function,
-   std::size_t i = 0, typename... Tuple>
+// Map a functor template over an std::tuple.
+template<template <typename T> class Function, std::size_t i = 0, typename... Tuple>
 inline typename std::enable_if<i == sizeof...(Tuple), void>::type
 for_each(const std::tuple<Tuple...>&) {}
 
-template<template <typename T> class Function,
-   std::size_t i = 0, typename... Tuple>
+template<template <typename T> class Function, std::size_t i = 0, typename... Tuple>
 inline typename std::enable_if<i < sizeof...(Tuple), void>::type
 for_each(const std::tuple<Tuple...>& t)
 {

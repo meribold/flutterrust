@@ -9,16 +9,14 @@
 
 #include "creatureTable.hpp"
 
-typedef std::tuple<std::string, int, int, int, std::string, std::string>
-CreatureType;
+typedef std::tuple<std::string, int, int, int, std::string, std::string> CreatureType;
 
 auto getName = [](const std::string& s) -> std::string {
    if (s.empty()) throw std::string{"name expected, got nothing"};
    static std::string pattern{R"([[:L*:] ]+)"};
    static auto regEx = boost::make_u32regex(pattern);
    if (!boost::u32regex_match(s, regEx)) {
-      throw std::string{"regex '" + pattern + "' doesn't match name '" + s +
-         "'"};
+      throw std::string{"regex '" + pattern + "' doesn't match name '" + s + "'"};
    }
    return s;
 };
@@ -46,8 +44,7 @@ auto getTraits = [](const std::string& s) -> std::string {
    static std::string pattern{R"(([A-Za-z0-9_]+( |$))*)"};
    static auto regEx = boost::make_u32regex(pattern);
    if (!boost::u32regex_match(s, regEx)) {
-      throw std::string{"regex '" + pattern + "' doesn't match traits '" + s +
-         "'"};
+      throw std::string{"regex '" + pattern + "' doesn't match traits '" + s + "'"};
    }
    return s;
 };
@@ -55,7 +52,7 @@ auto getTraits = [](const std::string& s) -> std::string {
 auto getPath = [](const std::string& s) -> std::string {
    static boost::regex regEx;
 
-   // Writing regular expressions is when not having to consider s being empty.
+   // Writing regular expressions is easier when not having to consider s being empty.
    if (s.empty()) return s;
 
    // http://stackoverflow.com/questions/537772/what-is-the-most-correct-regular
@@ -80,22 +77,21 @@ auto getPath = [](const std::string& s) -> std::string {
    return s;
 };
 
-auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getTraits,
-   getPath);
+auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getTraits, getPath);
 
-   template <typename T>
-   struct Print {
-      void operator()(const T& t) {
-         std::cout << "'" << t << "', ";
-      }
-   };
+template <typename T>
+struct Print {
+   void operator()(const T& t) {
+      std::cout << "'" << t << "', ";
+   }
+};
 
-   template <>
-   struct Print<int> {
-      void operator()(const int& i) {
-         std::cout << i << ", ";
-      }
-   };
+template <>
+struct Print<int> {
+   void operator()(const int& i) {
+      std::cout << i << ", ";
+   }
+};
 
 int main(int argc, char* argv[])
 {
@@ -135,9 +131,9 @@ int main(int argc, char* argv[])
       return 3;
    }
 
-   // http://stackoverflow.com/questions/3072795/how-to-count-lines-of-a-file-in
+   // http://stackoverflow.com/q/3072795/how-to-count-lines-of-a-file-in-c
    iStream.seekg(0);
-   int lines = std::count(std::istreambuf_iterator<char>(iStream),
+   const int lines = std::count(std::istreambuf_iterator<char>(iStream),
       std::istreambuf_iterator<char>(), '\n');
 
    std::cout << argv[0] << ": done parsing " << argv[1] << ":\n  "
@@ -146,8 +142,7 @@ int main(int argc, char* argv[])
              << lines - creatureTypes.size() << " lines skipped" << std::endl;
 
    if (!errors.empty()) {
-      std::cerr << argv[0] << ": errors while parsing " << argv[1] << ':'
-                << std::endl;
+      std::cerr << argv[0] << ": errors while parsing " << argv[1] << ':' << std::endl;
       for (const auto& error : errors) {
          std::cerr << "  " << error << std::endl;
       }
