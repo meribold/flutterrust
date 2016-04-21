@@ -11,4 +11,4 @@ $(local_program) : all_ldlibs   = $(LDLIBS) \
 $(local_program): $(local_sources:.cpp=.o) $(libraries)
 	$(CXX) $(all_ldflags) $^ $(all_ldlibs) -o $@
 
-# vim: tw=80 sw=3 noet
+# vim: tw=90 ts=8 sts=-1 sw=3 noet

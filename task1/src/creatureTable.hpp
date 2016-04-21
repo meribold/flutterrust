@@ -14,8 +14,7 @@ template<std::size_t i = 0, typename... Tp>
 inline typename std::enable_if<i < sizeof...(Tp) - 1, void>::type
 printCreatureType(const std::tuple<Tp...>& t);
 
-template<template <typename T> class Function,
-   std::size_t i = 0, typename... Tuple>
+template<template <typename T> class Function, std::size_t i = 0, typename... Tuple>
 inline typename std::enable_if<i == sizeof... (Tuple), void>::type
 for_each(const std::tuple<Tuple...>&);
 
@@ -23,4 +22,4 @@ for_each(const std::tuple<Tuple...>&);
 
 #endif
 
-// vim: tw=100 sw=3 et
+// vim: tw=90 sts=-1 sw=3 et

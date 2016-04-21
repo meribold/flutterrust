@@ -10,7 +10,7 @@ namespace {
    inline typename std::enable_if<i == sizeof... (Entries), void>::type
    loadCreatureType(std::tuple<Entries...>&,
                     std::tuple<Extractors...>&,
-                    const std::array<std::string, sizeof... (Entries)>&) { }
+                    const std::array<std::string, sizeof... (Entries)>&) {}
 
    template<std::size_t i = 0, typename... Entries, typename... Extractors>
    inline typename std::enable_if<i < sizeof... (Entries), void>::type
@@ -54,8 +54,7 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
       if (nextChar == '\n') {
          if (fieldIndex < fieldCount - 1 /*&& column > 1*/) {
             // Missing tokens.
-            errors.push_back(std::to_string(line) + ":" +
-               std::to_string(column) +
+            errors.push_back(std::to_string(line) + ":" + std::to_string(column) +
                ": additional entry expected before linebreak");
          }
          else if (fieldIndex == fieldCount - 1) {
@@ -67,8 +66,7 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
                errors.push_back(std::to_string(line) + ": parsing error: " + s);
             } catch (...) {
                creatureTypes.pop_back();
-               errors.push_back(std::to_string(line) +
-                  ": unknown parsing error: ");
+               errors.push_back(std::to_string(line) + ": unknown parsing error: ");
             }
          }
          for (auto& s : fields) {
@@ -79,9 +77,8 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
       else if (nextChar == ',') {
          if (++fieldIndex > fieldCount - 1) {
             // To many tokens.
-            errors.push_back(std::to_string(line) + ":" +
-               std::to_string(column) + ": entry expected to be final; got \'" +
-               nextChar + "'");
+            errors.push_back(std::to_string(line) + ":" + std::to_string(column) +
+               ": entry expected to be final; got \'" + nextChar + "'");
             iStream.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             iStream.unget();
             continue;
@@ -132,4 +129,4 @@ for_each(const std::tuple<Tuple...>& t)
       //std::tuple<Tuple...>>::type>{});
 }
 
-// vim: tw=100 sw=3 et
+// vim: tw=90 sts=-1 sw=3 et

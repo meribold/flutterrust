@@ -9,4 +9,4 @@
 task1/src/task1
 task2/src/task2
 
-# vim: tw=80
+# vim: tw=90 sts=-1 sw=3 et
