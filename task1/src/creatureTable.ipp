@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <array>
 #include <iostream>
+#include <type_traits>
 #include <utility>
 
 namespace {
@@ -44,9 +45,11 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
    std::vector<CreatureType> creatureTypes;
    std::istream::char_type nextChar;
 
-   int line       = 1;
-   int column     = 1;
-   int fieldIndex = 0;
+   int line   = 1;
+   int column = 1;
+
+   // Use whatever type fieldCount has but make sure it's not const (or volatile).
+   typename std::remove_cv<decltype(fieldCount)>::type fieldIndex = 0;
 
    std::array<std::string, fieldCount> fields;
 
