@@ -7,16 +7,16 @@ namespace {
    // http://stackoverflow.com/questions/1198260/iterate-over-tuple
    // http://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
    template<std::size_t i = 0, typename... Entries, typename... Extractors>
-   inline typename std::enable_if<i == sizeof... (Entries), void>::type
+   inline typename std::enable_if<i == sizeof...(Entries), void>::type
    loadCreatureType(std::tuple<Entries...>&,
                     std::tuple<Extractors...>&,
-                    const std::array<std::string, sizeof... (Entries)>&) {}
+                    const std::array<std::string, sizeof...(Entries)>&) {}
 
    template<std::size_t i = 0, typename... Entries, typename... Extractors>
-   inline typename std::enable_if<i < sizeof... (Entries), void>::type
+   inline typename std::enable_if<i < sizeof...(Entries), void>::type
    loadCreatureType(std::tuple<Entries...>& creatureType,
                     std::tuple<Extractors...>& extractors,
-                    const std::array<std::string, sizeof... (Entries)>& fields)
+                    const std::array<std::string, sizeof...(Entries)>& fields)
    {
       try {
          std::get<i>(creatureType) = std::get<i>(extractors)(fields[i]);
@@ -97,29 +97,29 @@ loadCreatureTypes(std::istream&& iStream, Extractors extractors,
 
 // http://stackoverflow.com/questions/1198260/iterate-over-tuple
 // http://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
-template<std::size_t i = 0, typename... Tp>
-inline typename std::enable_if<i == sizeof... (Tp) - 1, void>::type
-printCreatureType(const std::tuple<Tp...>& t)
+template<std::size_t i = 0, typename... Ts>
+inline typename std::enable_if<i == sizeof...(Ts) - 1, void>::type
+printCreatureType(const std::tuple<Ts...>& t)
 {
    std::cout << '(' << std::get<i>(t) << ')' << std::endl;
 }
 
-template<std::size_t i = 0, typename... Tp>
-inline typename std::enable_if<i < sizeof...(Tp) - 1, void>::type
-printCreatureType(const std::tuple<Tp...>& t)
+template<std::size_t i = 0, typename... Ts>
+inline typename std::enable_if<i < sizeof...(Ts) - 1, void>::type
+printCreatureType(const std::tuple<Ts...>& t)
 {
    std::cout << '(' << std::get<i>(t) << "), ";
-   printCreatureType<i + 1, Tp...>(t);
+   printCreatureType<i + 1, Ts...>(t);
 }
 
 template<template <typename T> class Function,
    std::size_t i = 0, typename... Tuple>
-inline typename std::enable_if<i == sizeof... (Tuple), void>::type
+inline typename std::enable_if<i == sizeof...(Tuple), void>::type
 for_each(const std::tuple<Tuple...>&) {}
 
 template<template <typename T> class Function,
    std::size_t i = 0, typename... Tuple>
-inline typename std::enable_if<i < sizeof... (Tuple), void>::type
+inline typename std::enable_if<i < sizeof...(Tuple), void>::type
 for_each(const std::tuple<Tuple...>& t)
 {
    Function<typename std::tuple_element<i, std::tuple<Tuple...>>::type> f{};
