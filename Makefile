@@ -16,7 +16,7 @@ SHELL := /bin/sh
 
 CXX      ?= g++
 CPPFLAGS += -Wall -Wextra -pedantic -g -O
-CXXFLAGS += -std=c++11 -Wold-style-cast
+CXXFLAGS += -std=c++14 -Wold-style-cast
 LDFLAGS  += -g -O
 LDLIBS   +=
 ARFLAGS  += cs
