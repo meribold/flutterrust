@@ -1,97 +1,10 @@
 #include <fstream>
 #include <iostream>
-#include <boost/regex/icu.hpp>
-#include <boost/regex.hpp>
 #include <string>
-#include <tuple>
 #include <utility>
 #include <vector>
 
-#include "creatureTable.hpp"
-
-typedef std::tuple<std::string, int, int, int, std::string, std::string> CreatureType;
-
-auto getName = [](const std::string& s) -> std::string {
-   if (s.empty()) throw std::string{"name expected, got nothing"};
-   static std::string pattern{R"([[:L*:] ]+)"};
-   static auto regEx = boost::make_u32regex(pattern);
-   if (!boost::u32regex_match(s, regEx)) {
-      throw std::string{"regex '" + pattern + "' doesn't match name '" + s + "'"};
-   }
-   return s;
-};
-
-// For strength, speed, and lifetime.
-auto getInt = [](const std::string& s) -> int {
-   int i = 0;
-   if (!s.empty()) {
-      try {
-         i = std::stoi(s);
-      }
-      catch (const std::invalid_argument& e) {
-         throw std::string{"stoi: can't convert \'" + s + "\' to int"};
-      }
-      catch (const std::out_of_range& e) {
-         throw std::string{"stoi: \'" + s + "\' is out of range of int"};
-      }
-   }
-   return i;
-};
-// http://stackoverflow.com/questions/7663709/convert-string-to-int-c
-// http://en.cppreference.com/w/cpp/string/basic_string/stol
-
-auto getTraits = [](const std::string& s) -> std::string {
-   static std::string pattern{R"(([A-Za-z0-9_]+( |$))*)"};
-   static auto regEx = boost::make_u32regex(pattern);
-   if (!boost::u32regex_match(s, regEx)) {
-      throw std::string{"regex '" + pattern + "' doesn't match traits '" + s + "'"};
-   }
-   return s;
-};
-
-auto getPath = [](const std::string& s) -> std::string {
-   static boost::regex regEx;
-
-   // Writing regular expressions is easier when not having to consider s being empty.
-   if (s.empty()) return s;
-
-   // http://stackoverflow.com/questions/537772/what-is-the-most-correct-regular
-   // http://en.wikipedia.org/wiki/Path_%28computing%29#POSIX_pathname_definition
-   // I'm not sure wether I should allow paths beginning with two slashes.
-   if (!boost::regex_match(s, boost::regex{R"([^\0]*)"})) {
-      throw std::string{"filename '" + s + "' contains the null character'"};
-   }
-
-   // Only accept POSIX "Fully portable filenames".
-   regEx = R"(([A-Za-z0-9._][A-Za-z0-9._-]{0,13}(/+|$))*)";
-   if (!boost::regex_match(s, regEx)) {
-      throw std::string{"path '" + s + "' should be made up of POSIX \"fully " +
-         "portable filenames\""};
-   }
-
-   // Don't accept consecutive slashes.
-   regEx = "//";
-   if (boost::regex_search(s, regEx)) {
-      throw std::string{"path '" + s + "' contains consecutive slashes"};
-   }
-   return s;
-};
-
-auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getTraits, getPath);
-
-template <typename T>
-struct Print {
-   void operator()(const T& t) {
-      std::cout << "'" << t << "', ";
-   }
-};
-
-template <>
-struct Print<int> {
-   void operator()(const int& i) {
-      std::cout << i << ", ";
-   }
-};
+#include "creature_parser.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -111,12 +24,16 @@ int main(int argc, char* argv[])
       return 2;
    }
 
-   std::vector<std::string> errors;
+   // http://stackoverflow.com/q/3072795/how-to-count-lines-of-a-file-in-c
+   const int lines = std::count(std::istreambuf_iterator<char>(iStream),
+      std::istreambuf_iterator<char>(), '\n');
+   iStream.seekg(0);
+
    std::vector<CreatureType> creatureTypes;
+   std::vector<std::string> errors;
 
    try {
-      creatureTypes = loadCreatureTypes<CreatureType>(std::move(iStream),
-         extractors, errors);
+      creatureTypes = loadCreatureTypes(std::move(iStream), errors);
    } catch (const std::ios_base::failure& e) {
       std::cerr << argv[0] << ": exception thrown while parsing " << argv[1]
                 << ": " << e.what() << std::endl;
@@ -131,14 +48,8 @@ int main(int argc, char* argv[])
       return 3;
    }
 
-   // http://stackoverflow.com/q/3072795/how-to-count-lines-of-a-file-in-c
-   iStream.seekg(0);
-   const int lines = std::count(std::istreambuf_iterator<char>(iStream),
-      std::istreambuf_iterator<char>(), '\n');
-
    std::cout << argv[0] << ": done parsing " << argv[1] << ":\n  "
-             << creatureTypes.size()
-             << " creature types imported successfully, "
+             << creatureTypes.size() << " creature types imported successfully, "
              << lines - creatureTypes.size() << " lines skipped" << std::endl;
 
    if (!errors.empty()) {
@@ -151,7 +62,7 @@ int main(int argc, char* argv[])
    std::cout << argv[0] << ": imported creature types:" << std::endl;
    for (const auto& creatureType : creatureTypes) {
       std::cout << "  ";
-      for_each<Print>(creatureType);
+      forEach<Print>(creatureType);
       std::cout << std::endl;
       //printCreatureType(creatureType);
    }
