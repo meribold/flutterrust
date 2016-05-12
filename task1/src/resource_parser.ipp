@@ -9,15 +9,16 @@
 #include "tuple_helpers.hpp"
 
 namespace {
-   // http://stackoverflow.com/questions/1198260/iterate-over-tuple
-   // http://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
-   template<std::size_t i = 0, typename... Entries, typename... Extractors>
+   // Kind of like Haskell's zipWith at compile time with one argement being is a list of
+   // functions.
+   // FIXME: WTF?  This should use generic forEach, that's what it's for...
+   template <std::size_t i = 0, typename... Entries, typename... Extractors>
    inline typename std::enable_if<i == sizeof...(Entries), void>::type
    loadResources(std::tuple<Entries...>&,
                  std::tuple<Extractors...>&,
                  const std::array<std::string, sizeof...(Entries)>&) {}
 
-   template<std::size_t i = 0, typename... Entries, typename... Extractors>
+   template <std::size_t i = 0, typename... Entries, typename... Extractors>
    inline typename std::enable_if<i < sizeof...(Entries), void>::type
    loadResources(std::tuple<Entries...>& creatureType,
                  std::tuple<Extractors...>& extractors,

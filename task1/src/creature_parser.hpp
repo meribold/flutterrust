@@ -8,7 +8,7 @@
 
 #include "resource_parser.hpp"
 
-typedef std::tuple<std::string, int, int, int, std::string, std::string> CreatureType;
+using CreatureType = std::tuple<std::string, int, int, int, std::string, std::string>;
 
 std::vector<CreatureType> loadCreatureTypes(std::istream&&);
 

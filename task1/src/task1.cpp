@@ -50,7 +50,7 @@ int main(int argc, char* argv[])
 
    std::cout << argv[0] << ": done parsing " << argv[1] << ":\n  "
              << creatureTypes.size() << " creature types imported successfully, "
-             << lines - creatureTypes.size() << " lines skipped" << std::endl;
+             << lines - creatureTypes.size() << " line(s) skipped" << std::endl;
 
    if (!errors.empty()) {
       std::cerr << argv[0] << ": errors while parsing " << argv[1] << ':' << std::endl;
@@ -62,9 +62,8 @@ int main(int argc, char* argv[])
    std::cout << argv[0] << ": imported creature types:" << std::endl;
    for (const auto& creatureType : creatureTypes) {
       std::cout << "  ";
-      forEach<Print>(creatureType);
+      printTuple(creatureType);
       std::cout << std::endl;
-      //printCreatureType(creatureType);
    }
 }
 

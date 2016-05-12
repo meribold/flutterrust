@@ -2,56 +2,42 @@
 #define TUPLE_HELPERS_HPP_5PDXFRA6
 
 #include <tuple>
-#include <type_traits>
+#include <type_traits> // enable_if
 
-// Apply a functor template to all members on an std::tuple.
-template<template <typename T> class Function, std::size_t i = 0, typename... Tuple>
-inline typename std::enable_if<i == sizeof...(Tuple), void>::type
-forEach(const std::tuple<Tuple...>&) {}
+// Apply a functor template to all members of an std::tuple.
+// http://stackoverflow.com/q/1198260/iterate-over-tuple
+// http://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
+template <template <typename T> class Function, std::size_t i = 0, typename... Ts>
+inline typename std::enable_if<i == sizeof...(Ts), void>::type
+forEach(const std::tuple<Ts...>&) {}
 
-template<template <typename T> class Function, std::size_t i = 0, typename... Tuple>
-inline typename std::enable_if<i < sizeof...(Tuple), void>::type
-forEach(const std::tuple<Tuple...>& t)
+template <template <typename T> class Function, std::size_t i = 0, typename... Ts>
+inline typename std::enable_if<i < sizeof...(Ts), void>::type
+forEach(const std::tuple<Ts...>& t)
 {
-   Function<typename std::tuple_element<i, std::tuple<Tuple...>>::type> f{};
+   constexpr Function<typename std::tuple_element<i, std::tuple<Ts...>>::type> f{};
    f(std::get<i>(t));
    forEach<Function, i + 1>(t);
-   //forEach<Function, i + 1>(t, Function<typename std::tuple_element<i + 1,
-      //std::tuple<Tuple...>>::type>{});
 }
 
 template <typename T>
 struct Print {
-   void operator()(const T& t) {
+   void operator()(const T& t) const {
       std::cout << "'" << t << "', ";
    }
 };
 
 template <>
 struct Print<int> {
-   void operator()(const int& i) {
+   void operator()(const int& i) const {
       std::cout << i << ", ";
    }
 };
 
-/*
-// http://stackoverflow.com/q/1198260/iterate-over-tuple
-// http://en.wikipedia.org/wiki/Substitution_failure_is_not_an_error
-template<std::size_t i = 0, typename... Ts>
-inline typename std::enable_if<i == sizeof...(Ts) - 1, void>::type
-printCreatureType(const std::tuple<Ts...>& t)
-{
-   std::cout << '(' << std::get<i>(t) << ')' << std::endl;
+template <typename... Ts>
+inline void printTuple(const std::tuple<Ts...>& t) {
+   forEach<Print>(t);
 }
-
-template<std::size_t i = 0, typename... Ts>
-inline typename std::enable_if<i < sizeof...(Ts) - 1, void>::type
-printCreatureType(const std::tuple<Ts...>& t)
-{
-   std::cout << '(' << std::get<i>(t) << "), ";
-   printCreatureType<i + 1, Ts...>(t);
-}
-*/
 
 #endif // TUPLE_HELPERS_HPP_5PDXFRA6
 
