@@ -10,6 +10,10 @@
 # "Every Makefile should contain this line..." - section 7.2.1 of the GNU Coding Standards
 SHELL := /bin/sh
 
+# Disable all built-in rules.  See http://stackoverflow.com/q/4122831 and
+# http://gnu.org/software/make/manual/html_node/Catalogue-of-Rules.html.
+MAKEFLAGS += --no-builtin-rules
+
 # Clear the suffix list; no suffix rules in this makefile.  See section 7.2.1 of the GNU
 # Coding Standards.
 .SUFFICES:

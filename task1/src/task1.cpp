@@ -4,7 +4,7 @@
 #include <utility>
 #include <vector>
 
-#include "creature_parser.hpp"
+#include "flutterrust/creature_parser.hpp"
 
 int main(int argc, char* argv[])
 {

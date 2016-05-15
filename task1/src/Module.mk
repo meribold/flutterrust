@@ -3,8 +3,8 @@ local_program := $(subdirectory)/task1
 sources  += $(addsuffix .cpp,$(local_program))
 programs += $(local_program)
 
-$(local_program) : all_ldflags  = $(addprefix -L,$(ld_dirs)) $(LDFLAGS)
-$(local_program) : all_ldlibs   = $(LDLIBS) -lboost_regex \
+$(local_program) : all_ldflags = $(addprefix -L,$(ld_dirs)) $(LDFLAGS)
+$(local_program) : all_ldlibs  = $(LDLIBS) -lboost_regex \
    $(shell icu-config --ldflags-libsonly) \
    $(patsubst lib%.a,-l%,$(notdir $(libraries)))
 
