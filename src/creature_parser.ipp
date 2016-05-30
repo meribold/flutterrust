@@ -5,7 +5,7 @@
 #include <vector>
 
 namespace {
-   auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getTraits, getPath);
+   auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getAttrs, getPath);
 }
 
 std::vector<CreatureType>

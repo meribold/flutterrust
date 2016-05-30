@@ -2,7 +2,7 @@
 #define TUPLE_HELPERS_HPP_5PDXFRA6
 
 #include <tuple>
-#include <type_traits> // enable_if
+#include <type_traits> // enable_if, underlying_type_t
 
 // Apply a functor template to all members of an std::tuple.
 // http://stackoverflow.com/q/1198260/iterate-over-tuple
@@ -37,6 +37,15 @@ struct Print<int> {
 template <typename... Ts>
 inline void printTuple(const std::tuple<Ts...>& t) {
    forEach<Print>(t);
+}
+
+// Get the underlying type of an enumerator.  Useful to access tuple elements with
+// std::get and a symbolic name with reduced verbosity and without using an unscoped enum
+// for the symbolic names (e.g., `std::get<toUT(EnumType::enumerator)>(enumObject)`).  See
+// item 10 from "Effective Modern C++ (Scott Meyers).  Requires C++14.
+template <typename E>
+constexpr auto toUT(E enumerator) noexcept {
+   return static_cast<std::underlying_type_t<E>>(enumerator);
 }
 
 #endif // TUPLE_HELPERS_HPP_5PDXFRA6
