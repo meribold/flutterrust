@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
    std::ifstream iStream{argv[1]};
    iStream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
-   if (not iStream.is_open()) {
+   if (!iStream.is_open()) {
       std::cerr << argv[0] << ": couldn't open file " << argv[1] << std::endl;
       return 2;
    }
