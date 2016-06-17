@@ -1,4 +1,4 @@
-# flutterust
+# flutterrust
 
 Just a university assignment.
 
