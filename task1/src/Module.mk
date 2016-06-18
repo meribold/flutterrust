@@ -1,10 +1,10 @@
 local_program := $(subdirectory)/task1
 
-sources  += $(addsuffix .cpp,$(local_program))
-programs += $(local_program)
+sources       += $(addsuffix .cpp,$(local_program))
+programs      += $(local_program)
 
-$(local_program) : all_ldflags = $(addprefix -L,$(ld_dirs)) $(LDFLAGS)
-$(local_program) : all_ldlibs  = $(LDLIBS) -lboost_regex \
+$(local_program) : local_ldflags = $(addprefix -L,$(ld_dirs)) $(all_ldflags)
+$(local_program) : local_ldlibs  = $(all_ldlibs) -lboost_regex \
    $(shell icu-config --ldflags-libsonly) \
    $(patsubst lib%.a,-l%,$(notdir $(libraries)))
 
@@ -17,6 +17,6 @@ $(local_program) : all_ldlibs  = $(LDLIBS) -lboost_regex \
 # (http://www.gnu.org/software/make/manual/make.html#Variables-in-Recipes).  This means we
 # can't use the `local_` variables in the recipe.
 $(local_program): $(addsuffix .o,$(local_program)) $$(libraries)
-	$(CXX) $(all_ldflags) $^ $(all_ldlibs) -o $@
+	$(CXX) $(local_ldflags) $^ $(local_ldlibs) -o $@
 
 # vim: tw=90 ts=8 sts=-1 sw=3 noet

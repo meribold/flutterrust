@@ -19,8 +19,10 @@ MAKEFLAGS += --no-builtin-rules
 .SUFFICES:
 
 CXX      ?= g++
+WXCONFIG ?= wx-config
 CPPFLAGS += -Wall -Wextra -pedantic -g -O
-CXXFLAGS += -std=c++14 -Wold-style-cast
+# wxWidgets' uses old-style casts, so I need to disable the warnings about them.
+CXXFLAGS += -std=c++14 -Wno-old-style-cast
 LDFLAGS  += -g -O
 LDLIBS   +=
 ARFLAGS  += cs
@@ -32,10 +34,10 @@ subdirectory = $(patsubst %/Module.mk,%, \
    $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 
 # See section 7.2.3 'Variables for Specifying Commands' of the GNU Coding Standards.
-all_cppflags := $(CPPFLAGS)
-all_cxxflags := $(CXXFLAGS) -c
+all_cppflags := $$($(WXCONFIG) --cppflags) $(CPPFLAGS)
+all_cxxflags := $$($(WXCONFIG) --cxxflags) $(CXXFLAGS) -c
 all_ldflags  := $(LDFLAGS)
-all_ldlibs   := $(LDLIBS)
+all_ldlibs   := $(LDLIBS) $$($(WXCONFIG) --libs)
 all_arflags  := $(ARFLAGS)
 
 # Explicitly initialize as simple variables as recursive ones are the default.
