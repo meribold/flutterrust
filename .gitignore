@@ -6,6 +6,7 @@
 # Ignore prerequisite files automatically generated for GNU Make.
 *.d
 
+src/flutterrust
 task1/src/task1
 task2/src/task2
 
