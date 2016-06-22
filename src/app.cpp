@@ -1,12 +1,13 @@
 #include <wx/app.h>
-#include <wx/frame.h>
+
+#include "main_frame.hpp"
 
 class App : public wxApp {
   public:
    virtual bool OnInit() override;
 
   private:
-   wxFrame* mainFrame;
+   MainFrame* mainFrame;
 };
 
 wxIMPLEMENT_APP(App);
@@ -15,8 +16,7 @@ bool App::OnInit() {
    SetAppName(u8"flutterrust");
    SetAppDisplayName(u8"flutterrust");
 
-   mainFrame = new wxFrame{nullptr, wxID_ANY, u8"flutterrust", wxDefaultPosition,
-                           wxSize(640, 720)},
+   mainFrame = new MainFrame{};
 
    mainFrame->Show(true);
    SetTopWindow(mainFrame);
