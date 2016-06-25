@@ -18,14 +18,15 @@ MAKEFLAGS += --no-builtin-rules
 # Coding Standards.
 .SUFFICES:
 
-CXX      ?= g++
-WXCONFIG ?= wx-config
-CPPFLAGS += -Wall -Wextra -pedantic -g -O
-# wxWidgets' uses old-style casts, so I need to disable the warnings about them.
-CXXFLAGS += -std=c++14 -Wno-old-style-cast
-LDFLAGS  += -g -O
-LDLIBS   +=
-ARFLAGS  += cs
+CXX       ?= g++
+WXCONFIG  ?= wx-config
+ICUCONFIG ?= icu-config
+CPPFLAGS  += -Wall -Wextra -pedantic -g -O
+# wxWidge ts' uses old-style casts, so I need to disable the warnings about them.
+CXXFLAGS  += -std=c++14 -Wno-old-style-cast
+LDFLAGS   += -g -O
+LDLIBS    +=
+ARFLAGS   += cs
 
 ##########################################################################################
 
@@ -37,7 +38,7 @@ subdirectory = $(patsubst %/Module.mk,%, \
 all_cppflags := $$($(WXCONFIG) --cppflags) $(CPPFLAGS)
 all_cxxflags := $$($(WXCONFIG) --cxxflags) $(CXXFLAGS) -c
 all_ldflags  := $(LDFLAGS)
-all_ldlibs   := $(LDLIBS) $$($(WXCONFIG) --libs)
+all_ldlibs   := $(LDLIBS)
 all_arflags  := $(ARFLAGS)
 
 # Explicitly initialize as simple variables as recursive ones are the default.

@@ -4,8 +4,8 @@ sources       += $(addsuffix .cpp,$(local_program))
 programs      += $(local_program)
 
 $(local_program) : local_ldflags = $(addprefix -L,$(ld_dirs)) $(all_ldflags)
-$(local_program) : local_ldlibs  = $(all_ldlibs) -lboost_regex \
-   $(shell icu-config --ldflags-libsonly) \
+$(local_program) : local_ldlibs  = $(all_ldlibs) $$($(ICUCONFIG) --ldflags-libsonly) \
+   -lboost_regex \
    $(patsubst lib%.a,-l%,$(notdir $(libraries)))
 
 # Enable the second expansion of prerequisites (only).

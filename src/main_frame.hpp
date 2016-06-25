@@ -6,11 +6,14 @@
 #include <wx/button.h>
 #include <wx/choice.h>
 #include <wx/frame.h>
+#include <wx/menu.h>  // wxMenuBar
 #include <wx/panel.h>
 #include <wx/sizer.h>
 #include <wx/statbox.h>  // wxStaticBox
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
+
+#include "world.hpp"
 
 class MainFrame : public wxFrame {
   public:
@@ -22,6 +25,7 @@ class MainFrame : public wxFrame {
    // void onLeaveControlsBox(wxMouseEvent&);
    void onPaint(wxPaintEvent&);
 
+   wxMenuBar* menuBar;
    wxPanel* topPanel;
    wxBoxSizer* topSizer;
    wxPanel* worldPanel;
@@ -34,6 +38,8 @@ class MainFrame : public wxFrame {
    wxButton* placeCreatureButton;
    wxButton* playPauseButton;
    wxButton* stepButton;
+
+   World world;
 };
 
 #endif  // MAIN_FRAME_HPP_JJ6U3B49

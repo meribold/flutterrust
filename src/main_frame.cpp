@@ -1,6 +1,7 @@
 #include "main_frame.hpp"
 
-#include <cassert>  // assert
+#include <cassert>     // assert
+#include <functional>  // bind
 
 #include <wx/colour.h>    // wxColour
 #include <wx/dcbuffer.h>  // wxAutoBufferedPaintDC
@@ -8,6 +9,7 @@
 
 MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
     : wxFrame{nullptr, wxID_ANY, u8"flutterrust", pos, size},
+      menuBar{new wxMenuBar{}},
       topPanel{new wxPanel{this}},
       topSizer{new wxBoxSizer{wxHORIZONTAL}},
       worldPanel{new wxPanel{topPanel}},
@@ -28,8 +30,18 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
                        new wxTextCtrl{controlsBox, wxID_ANY, wxEmptyString,
                                       wxDefaultPosition, wxDefaultSize, wxTE_READONLY}}},
       placeCreatureButton{new wxButton{controlsBox, wxID_ANY, u8"Place"}},
-      playPauseButton{new wxButton{controlsBox, wxID_ANY, u8"Play"}},
-      stepButton{new wxButton{controlsBox, wxID_ANY, u8"Step"}} {
+      playPauseButton{new wxButton{controlsBox, wxID_ANY, u8"Unpause"}},
+      stepButton{new wxButton{controlsBox, wxID_ANY, u8"Step"}},
+      world{} {
+   for (const auto& type : world.creatureTypes) {
+      creatureChoice->Append(std::get<cTFields::name>(type));
+   }
+   {
+      auto* fileMenu = new wxMenu{};
+      fileMenu->Append(wxID_EXIT, "&Quit\tCtrl+Q");
+      menuBar->Append(fileMenu, "&File");
+      SetMenuBar(menuBar);
+   }
    worldPanel->SetOwnBackgroundColour(wxColour{0x00, 0x00, 0x80});
    controlsBox->SetOwnForegroundColour(wxColour{0xff, 0xff, 0xff});
    topSizer->Add(worldPanel, 1, wxEXPAND);
@@ -57,6 +69,15 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
    worldPanelSizer->Add(controlsSizer, 0, wxTOP | wxRIGHT, 4);
    worldPanel->SetSizer(worldPanelSizer);
    topPanel->SetSizerAndFit(topSizer);
+   {
+      auto* sizer = new wxBoxSizer{wxVERTICAL};
+      sizer->Add(topPanel, 1, wxEXPAND);
+      SetSizerAndFit(sizer);
+      SetSize(wxDefaultCoord, wxDefaultCoord, 640, 480);
+   }
+
+   Bind(wxEVT_COMMAND_MENU_SELECTED, std::bind(&MainFrame::Close, this, false),
+        wxID_EXIT);
 
    // ...
    controlsBox->Bind(wxEVT_LEFT_DCLICK, &MainFrame::toggleControlsBox, this);

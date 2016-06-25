@@ -5,7 +5,9 @@ programs      += $(local_program)
 sources       += $(local_sources)
 
 $(local_program) : local_ldflags  = $(addprefix -L,$(ld_dirs)) $(all_ldflags)
-$(local_program) : local_ldlibs   = $(all_ldlibs) \
+$(local_program) : local_ldlibs  = $(all_ldlibs) $$($(ICUCONFIG) --ldflags-libsonly) \
+   $$($(WXCONFIG) --libs) \
+   -lboost_regex \
    $(patsubst lib%.a,-l%,$(notdir $(libraries)))
 
 # Enable the second expansion of prerequisites (only).
