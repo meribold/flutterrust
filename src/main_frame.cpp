@@ -19,8 +19,8 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
       creatureChoice{new wxChoice{controlsBox, wxID_ANY}},
       propertyLabels{{new wxStaticText{controlsBox, wxID_ANY, u8"Strength"},
                       new wxStaticText{controlsBox, wxID_ANY, u8"Speed"},
-                      new wxStaticText{controlsBox, wxID_ANY, u8"Life"},
-                      new wxStaticText{controlsBox, wxID_ANY, u8"Properties"}}},
+                      new wxStaticText{controlsBox, wxID_ANY, u8"Lifetime"},
+                      new wxStaticText{controlsBox, wxID_ANY, u8"Attributes"}}},
       propertyEntries{{new wxTextCtrl{controlsBox, wxID_ANY, wxEmptyString,
                                       wxDefaultPosition, wxDefaultSize, wxTE_READONLY},
                        new wxTextCtrl{controlsBox, wxID_ANY, wxEmptyString,
@@ -32,7 +32,7 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
       placeCreatureButton{new wxButton{controlsBox, wxID_ANY, u8"Place"}},
       playPauseButton{new wxButton{controlsBox, wxID_ANY, u8"Unpause"}},
       stepButton{new wxButton{controlsBox, wxID_ANY, u8"Step"}},
-      world{} {
+      world{u8"CreatureTable.txt"} {
    for (const auto& type : world.creatureTypes) {
       creatureChoice->Append(std::get<cTFields::name>(type));
    }
@@ -83,6 +83,15 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
    controlsBox->Bind(wxEVT_LEFT_DCLICK, &MainFrame::toggleControlsBox, this);
    // controlsBox->Bind(wxEVT_ENTER_WINDOW, &MainFrame::onEnterControlsBox, this);
    // controlsBox->Bind(wxEVT_LEAVE_WINDOW, &MainFrame::onLeaveControlsBox, this);
+
+   creatureChoice->Bind(wxEVT_CHOICE, &MainFrame::onCreatureChoice, this);
+
+   // creatureChoice->SetSelection(0);
+   {
+      wxCommandEvent* event = new wxCommandEvent{wxEVT_CHOICE};
+      event->SetInt(0);
+      ProcessEvent(*event);
+   }
 }
 
 void MainFrame::toggleControlsBox(wxMouseEvent&) {
@@ -112,6 +121,18 @@ void MainFrame::onLeaveControlsBox(wxMouseEvent&) {
 
 void MainFrame::onPaint(wxPaintEvent&) {
    wxAutoBufferedPaintDC dC{worldPanel};  // prevents tearing
+}
+
+void MainFrame::onCreatureChoice(wxCommandEvent& event) {
+   auto index = event.GetInt();
+   const auto& type = world.creatureTypes[index];
+   for (const auto& textCtrl : propertyEntries) {
+      textCtrl->Clear();
+   }
+   *propertyEntries[0] << std::get<cTFields::strength>(type);
+   *propertyEntries[1] << std::get<cTFields::speed>(type);
+   *propertyEntries[2] << std::get<cTFields::lifetime>(type);
+   *propertyEntries[3] << std::get<cTFields::attributes>(type);
 }
 
 // vim: tw=90 sts=-1 sw=3 et

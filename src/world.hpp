@@ -1,13 +1,14 @@
 #ifndef WORLD_HPP_L42R9DKX
 #define WORLD_HPP_L42R9DKX
 
+#include <string>
 #include <vector>
 
 #include "creature_type.hpp"
 
 class World {
   public:
-   World();
+   World(std::string filePath);
 
    std::vector<CreatureType> creatureTypes;
 
