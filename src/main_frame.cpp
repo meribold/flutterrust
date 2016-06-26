@@ -86,12 +86,19 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
 
    creatureChoice->Bind(wxEVT_CHOICE, &MainFrame::onCreatureChoice, this);
 
-   // creatureChoice->SetSelection(0);
-   {
-      wxCommandEvent* event = new wxCommandEvent{wxEVT_CHOICE};
-      event->SetInt(0);
-      ProcessEvent(*event);
+   creatureChoice->SetSelection(0);
+   updateAttributes(0);
+}
+
+void MainFrame::updateAttributes(std::size_t creatureIndex) {
+   const auto& type = world.creatureTypes[creatureIndex];
+   for (const auto& textCtrl : propertyEntries) {
+      textCtrl->Clear();
    }
+   *propertyEntries[0] << std::get<cTFields::strength>(type);
+   *propertyEntries[1] << std::get<cTFields::speed>(type);
+   *propertyEntries[2] << std::get<cTFields::lifetime>(type);
+   *propertyEntries[3] << std::get<cTFields::attributes>(type);
 }
 
 void MainFrame::toggleControlsBox(wxMouseEvent&) {
@@ -125,14 +132,7 @@ void MainFrame::onPaint(wxPaintEvent&) {
 
 void MainFrame::onCreatureChoice(wxCommandEvent& event) {
    auto index = event.GetInt();
-   const auto& type = world.creatureTypes[index];
-   for (const auto& textCtrl : propertyEntries) {
-      textCtrl->Clear();
-   }
-   *propertyEntries[0] << std::get<cTFields::strength>(type);
-   *propertyEntries[1] << std::get<cTFields::speed>(type);
-   *propertyEntries[2] << std::get<cTFields::lifetime>(type);
-   *propertyEntries[3] << std::get<cTFields::attributes>(type);
+   updateAttributes(index);
 }
 
 // vim: tw=90 sts=-1 sw=3 et

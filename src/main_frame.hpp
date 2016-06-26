@@ -2,6 +2,7 @@
 #define MAIN_FRAME_HPP_JJ6U3B49
 
 #include <array>
+#include <cstddef>  // size_t
 
 #include <wx/button.h>
 #include <wx/choice.h>
@@ -20,6 +21,8 @@ class MainFrame : public wxFrame {
    MainFrame(const wxPoint& = wxDefaultPosition, const wxSize& = wxDefaultSize);
 
   private:
+   void updateAttributes(std::size_t creatureIndex);
+
    void toggleControlsBox(wxMouseEvent&);
    // void onEnterControlsBox(wxMouseEvent&);
    // void onLeaveControlsBox(wxMouseEvent&);
