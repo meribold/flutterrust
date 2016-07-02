@@ -2,6 +2,7 @@
 
 #include <cassert>     // assert
 #include <functional>  // bind
+#include <iostream>    // TODO: remove
 
 #include <wx/colour.h>    // wxColour
 #include <wx/dcbuffer.h>  // wxAutoBufferedPaintDC
@@ -85,6 +86,9 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
    // controlsBox->Bind(wxEVT_LEAVE_WINDOW, &MainFrame::onLeaveControlsBox, this);
 
    creatureChoice->Bind(wxEVT_CHOICE, &MainFrame::onCreatureChoice, this);
+   placeCreatureButton->Bind(wxEVT_BUTTON, &MainFrame::onPlace, this);
+   playPauseButton->Bind(wxEVT_BUTTON, &MainFrame::onPlayPause, this);
+   stepButton->Bind(wxEVT_BUTTON, &MainFrame::onStep, this);
 
    creatureChoice->SetSelection(0);
    updateAttributes(0);
@@ -134,5 +138,16 @@ void MainFrame::onCreatureChoice(wxCommandEvent& event) {
    auto index = event.GetInt();
    updateAttributes(index);
 }
+
+void MainFrame::onPlace(wxCommandEvent&) { std::cerr << "Place\n"; }
+
+void MainFrame::onPlayPause(wxCommandEvent&) {
+   if (true)  // TODO
+      std::cerr << "Play\n";
+   else
+      std::cerr << "Pause\n";
+}
+
+void MainFrame::onStep(wxCommandEvent&) { std::cerr << "Step\n"; }
 
 // vim: tw=90 sts=-1 sw=3 et

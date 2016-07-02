@@ -28,6 +28,9 @@ class MainFrame : public wxFrame {
    // void onLeaveControlsBox(wxMouseEvent&);
    void onPaint(wxPaintEvent&);
    void onCreatureChoice(wxCommandEvent&);
+   void onPlace(wxCommandEvent&);
+   void onPlayPause(wxCommandEvent&);
+   void onStep(wxCommandEvent&);
 
    wxMenuBar* menuBar;
    wxPanel* topPanel;
