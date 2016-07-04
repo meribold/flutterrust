@@ -146,8 +146,38 @@ void MainFrame::onPlayPause(wxCommandEvent&) {
       std::cerr << "Play\n";
    else
       std::cerr << "Pause\n";
+
+   /*
+   World::PosHash hash{};
+   std::cerr << "-386: " << hash({-386, -128}) << '\n';
+   std::cerr << "-385: " << hash({-385, -128}) << '\n';
+   std::cerr << "-384: " << hash({-384, -128}) << '\n';
+   std::cerr << "-383: " << hash({-383, -128}) << '\n';
+   std::cerr << "-382: " << hash({-382, -128}) << '\n';
+   std::cerr << "-130: " << hash({-130, -128}) << '\n';
+   std::cerr << "-129: " << hash({-129, -128}) << '\n';
+   std::cerr << "-128: " << hash({-128, -128}) << '\n';
+   std::cerr << "-127: " << hash({-127, -128}) << '\n';
+   std::cerr << "-126: " << hash({-126, -128}) << '\n';
+   std::cerr << "-1: " << hash({-1, -128}) << '\n';
+   std::cerr << "0: " << hash({0, -128}) << '\n';
+   std::cerr << "1: " << hash({1, -128}) << '\n';
+   std::cerr << "126: " << hash({126, -128}) << '\n';
+   std::cerr << "127: " << hash({127, -128}) << '\n';
+   std::cerr << "128: " << hash({128, -128}) << '\n';
+   std::cerr << "129: " << hash({129, -128}) << '\n';
+   std::cerr << "130: " << hash({130, -128}) << '\n';
+   std::cerr << "382: " << hash({382, -128}) << '\n';
+   std::cerr << "383: " << hash({383, -128}) << '\n';
+   std::cerr << "384: " << hash({384, -128}) << '\n';
+   std::cerr << "385: " << hash({385, -128}) << '\n';
+   std::cerr << "386: " << hash({386, -128}) << '\n';
+   */
 }
 
-void MainFrame::onStep(wxCommandEvent&) { std::cerr << "Step\n"; }
+void MainFrame::onStep(wxCommandEvent&) {
+   std::cerr << "Step\n";
+   world.step();
+}
 
 // vim: tw=90 sts=-1 sw=3 et
