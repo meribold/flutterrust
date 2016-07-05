@@ -24,9 +24,9 @@ World::World(std::string filePath) : creatureTypes{} {
 
 void World::step() {}
 
-TileType World::getTileType(int row, int col) const {
-   if (row == 0 && col == 0)
-      return TileType::sand;
+TileType World::getTileType(int x, int y) const {
+   if ((x + y) % 2 == 0)
+      return TileType::water;
    return TileType::deepWater;
 }
 

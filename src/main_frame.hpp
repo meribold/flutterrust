@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstddef>  // size_t
+#include <cstdint>  // int64_t
 
 #include <wx/button.h>
 #include <wx/choice.h>
@@ -32,7 +33,8 @@ class MainFrame : public wxFrame {
    void onPlayPause(wxCommandEvent&);
    void onStep(wxCommandEvent&);
 
-   float row = .0f, col = .0f;
+   // Pixels.
+   std::int64_t scrollOffX = 37, scrollOffY = -42;
 
    wxMenuBar* menuBar;
    wxPanel* topPanel;

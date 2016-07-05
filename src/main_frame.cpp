@@ -1,6 +1,8 @@
 #include "main_frame.hpp"
 
 #include <cassert>     // assert
+#include <cstddef>     // size_t
+#include <cstdint>     // int64_t
 #include <functional>  // bind
 #include <iostream>    // TODO: remove
 
@@ -136,8 +138,31 @@ void MainFrame::toggleControlsBox(wxMouseEvent&) {
 
 // Process a wxEVT_PAINT event.
 void MainFrame::onPaint(wxPaintEvent&) {
-   wxAutoBufferedPaintDC dC{worldPanel};  // prevents tearing
-   dC.DrawBitmap(terrainBitmaps[0], 0, 0);
+   constexpr std::size_t tileSize = 32;
+   wxAutoBufferedPaintDC dC{worldPanel};  // Prevents tearing.
+   int panelWidth, panelHeight;
+   dC.GetSize(&panelWidth, &panelHeight);
+
+   std::int64_t initialWorldX = (scrollOffX - tileSize + 1) / tileSize;
+   std::int64_t worldY = (scrollOffY - tileSize + 1) / tileSize;
+
+   std::int64_t initialDrawOffsetX = scrollOffX % tileSize;
+   std::int64_t drawOffsetY = scrollOffY % tileSize;
+   if (initialDrawOffsetX > 0) initialDrawOffsetX -= tileSize;
+   if (drawOffsetY > 0) drawOffsetY -= tileSize;
+
+   while (drawOffsetY < panelHeight) {
+      auto worldX = initialWorldX;
+      auto drawOffsetX = initialDrawOffsetX;
+      while (drawOffsetX < panelWidth) {
+         dC.DrawBitmap(terrainBitmaps[toUT(world.getTileType(worldX, worldY))],
+                       drawOffsetX, drawOffsetY);
+         ++worldX;
+         drawOffsetX += tileSize;
+      }
+      ++worldY;
+      drawOffsetY += tileSize;
+   }
 }
 
 void MainFrame::onCreatureChoice(wxCommandEvent& event) {

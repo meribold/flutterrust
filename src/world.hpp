@@ -23,7 +23,7 @@ class World {
 
    void step();
 
-   TileType getTileType(int row, int col) const;
+   TileType getTileType(int x, int y) const;
 
    // TODO getCreatureIterator()();
    // TODO getCreatures()(int row, int col);
