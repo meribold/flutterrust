@@ -13,6 +13,8 @@
 #include "creature_type.hpp"
 #include "tile.hpp"
 
+enum class TileType : uint8_t { deepWater = 0, water, sand, dirt, rock, snow };
+
 class World {
   public:
    World(std::string filePath);
@@ -21,10 +23,12 @@ class World {
 
    void step();
 
-   // const TODO getTileType()(int row, int col) const;
+   TileType getTileType(int row, int col) const;
 
    // TODO getCreatureIterator()();
    // TODO getCreatures()(int row, int col);
+
+   void testHash();
 
   private:
    using Pos = int64_t[2];

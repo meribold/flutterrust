@@ -8,6 +8,8 @@
 #include <wx/dcbuffer.h>  // wxAutoBufferedPaintDC
 #include <wx/statline.h>  // wxStaticLine
 
+#include "tuple_helpers.hpp"  // toUT
+
 MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
     : wxFrame{nullptr, wxID_ANY, u8"flutterrust", pos, size},
       menuBar{new wxMenuBar{}},
@@ -34,6 +36,16 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
       playPauseButton{new wxButton{controlsBox, wxID_ANY, u8"Unpause"}},
       stepButton{new wxButton{controlsBox, wxID_ANY, u8"Step"}},
       world{u8"CreatureTable.txt"} {
+   // for (auto i = toUT(TileType::deepWater); i <= toUT(TileType::snow); ++i) {
+   //    terrainBitmaps[i];
+   // }
+   terrainBitmaps[0].LoadFile(u8"icons/terrain/deep_sea.tga", wxBITMAP_TYPE_TGA);
+   terrainBitmaps[1].LoadFile(u8"icons/terrain/shallow_water.tga", wxBITMAP_TYPE_TGA);
+   terrainBitmaps[2].LoadFile(u8"icons/terrain/sand.tga", wxBITMAP_TYPE_TGA);
+   terrainBitmaps[3].LoadFile(u8"icons/terrain/earth.tga", wxBITMAP_TYPE_TGA);
+   terrainBitmaps[4].LoadFile(u8"icons/terrain/rocks.tga", wxBITMAP_TYPE_TGA);
+   terrainBitmaps[5].LoadFile(u8"icons/terrain/snow.tga", wxBITMAP_TYPE_TGA);
+
    for (const auto& type : world.creatureTypes) {
       creatureChoice->Append(std::get<cTFields::name>(type));
    }
@@ -43,6 +55,9 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
       menuBar->Append(fileMenu, "&File");
       SetMenuBar(menuBar);
    }
+   // Change the background style to allow using an EVT_PAINT handler.
+   // [1]: http://docs.wxwidgets.org/trunk/classwx_window.html#af14f8fd2ed2d30a9bbb5d4f9fd
+   worldPanel->SetBackgroundStyle(wxBG_STYLE_PAINT);
    worldPanel->SetOwnBackgroundColour(wxColour{0x00, 0x00, 0x80});
    controlsBox->SetOwnForegroundColour(wxColour{0xff, 0xff, 0xff});
    topSizer->Add(worldPanel, 1, wxEXPAND);
@@ -77,13 +92,12 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
       SetSize(wxDefaultCoord, wxDefaultCoord, 640, 480);
    }
 
+   worldPanel->Bind(wxEVT_PAINT, &MainFrame::onPaint, this);
    Bind(wxEVT_COMMAND_MENU_SELECTED, std::bind(&MainFrame::Close, this, false),
         wxID_EXIT);
 
    // ...
    controlsBox->Bind(wxEVT_LEFT_DCLICK, &MainFrame::toggleControlsBox, this);
-   // controlsBox->Bind(wxEVT_ENTER_WINDOW, &MainFrame::onEnterControlsBox, this);
-   // controlsBox->Bind(wxEVT_LEAVE_WINDOW, &MainFrame::onLeaveControlsBox, this);
 
    creatureChoice->Bind(wxEVT_CHOICE, &MainFrame::onCreatureChoice, this);
    placeCreatureButton->Bind(wxEVT_BUTTON, &MainFrame::onPlace, this);
@@ -120,18 +134,10 @@ void MainFrame::toggleControlsBox(wxMouseEvent&) {
    worldPanel->Layout();
 }
 
-/*
-void MainFrame::onEnterControlsBox(wxMouseEvent&) {
-   controlsBox->HideWithEffect(wxSHOW_EFFECT_EXPAND);
-}
-
-void MainFrame::onLeaveControlsBox(wxMouseEvent&) {
-   controlsBox->ShowWithEffect(wxSHOW_EFFECT_EXPAND);
-}
-*/
-
+// Process a wxEVT_PAINT event.
 void MainFrame::onPaint(wxPaintEvent&) {
    wxAutoBufferedPaintDC dC{worldPanel};  // prevents tearing
+   dC.DrawBitmap(terrainBitmaps[0], 0, 0);
 }
 
 void MainFrame::onCreatureChoice(wxCommandEvent& event) {
@@ -146,33 +152,6 @@ void MainFrame::onPlayPause(wxCommandEvent&) {
       std::cerr << "Play\n";
    else
       std::cerr << "Pause\n";
-
-   /*
-   World::PosHash hash{};
-   std::cerr << "-386: " << hash({-386, -128}) << '\n';
-   std::cerr << "-385: " << hash({-385, -128}) << '\n';
-   std::cerr << "-384: " << hash({-384, -128}) << '\n';
-   std::cerr << "-383: " << hash({-383, -128}) << '\n';
-   std::cerr << "-382: " << hash({-382, -128}) << '\n';
-   std::cerr << "-130: " << hash({-130, -128}) << '\n';
-   std::cerr << "-129: " << hash({-129, -128}) << '\n';
-   std::cerr << "-128: " << hash({-128, -128}) << '\n';
-   std::cerr << "-127: " << hash({-127, -128}) << '\n';
-   std::cerr << "-126: " << hash({-126, -128}) << '\n';
-   std::cerr << "-1: " << hash({-1, -128}) << '\n';
-   std::cerr << "0: " << hash({0, -128}) << '\n';
-   std::cerr << "1: " << hash({1, -128}) << '\n';
-   std::cerr << "126: " << hash({126, -128}) << '\n';
-   std::cerr << "127: " << hash({127, -128}) << '\n';
-   std::cerr << "128: " << hash({128, -128}) << '\n';
-   std::cerr << "129: " << hash({129, -128}) << '\n';
-   std::cerr << "130: " << hash({130, -128}) << '\n';
-   std::cerr << "382: " << hash({382, -128}) << '\n';
-   std::cerr << "383: " << hash({383, -128}) << '\n';
-   std::cerr << "384: " << hash({384, -128}) << '\n';
-   std::cerr << "385: " << hash({385, -128}) << '\n';
-   std::cerr << "386: " << hash({386, -128}) << '\n';
-   */
 }
 
 void MainFrame::onStep(wxCommandEvent&) {

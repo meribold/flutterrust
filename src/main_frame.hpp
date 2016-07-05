@@ -32,6 +32,8 @@ class MainFrame : public wxFrame {
    void onPlayPause(wxCommandEvent&);
    void onStep(wxCommandEvent&);
 
+   float row = .0f, col = .0f;
+
    wxMenuBar* menuBar;
    wxPanel* topPanel;
    wxBoxSizer* topSizer;
@@ -46,6 +48,7 @@ class MainFrame : public wxFrame {
    wxButton* playPauseButton;
    wxButton* stepButton;
 
+   std::array<wxBitmap, 6> terrainBitmaps;
    World world;
 };
 

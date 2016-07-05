@@ -24,6 +24,12 @@ World::World(std::string filePath) : creatureTypes{} {
 
 void World::step() {}
 
+TileType World::getTileType(int row, int col) const {
+   if (row == 0 && col == 0)
+      return TileType::sand;
+   return TileType::deepWater;
+}
+
 // Map a signed integer number z to the interval [0, 2^n - 1].  Injective for the domain
 // [- 2^(n-1), 2^(n-1) - 1].
 template <std::size_t n, typename Z>
@@ -39,12 +45,10 @@ inline std::size_t toNBits(Z z) {
 }
 
 std::size_t World::PosHash::operator()(Pos const& pos) const {
-   // Odds are we only get ints with very small absolute values.  Construct a hash by
-   // taking the moduli of both coordinates and the biggest number that fits in half the
-   // bits of size_t.  Use those moduli chained together as the hash.
-   // There will be no collisions for positions that aren't super far from the origin.
+   // Odds are we only get ints with very small absolute values.  Convert both coordinates
+   // to values that fit into half the bits of size_t and chain those together.  There are
+   // no collisions when both coordinates are in [- 2^(n-1), 2^(n-1) - 1].
    constexpr std::size_t numBits = sizeof(std::size_t) * CHAR_BIT;
-   // constexpr std::size_t numBits = 16;
    // Assert that size_t has an even number of bits.
    static_assert(numBits / 2 * 2 == numBits, "Seriously?");
    constexpr std::size_t halfNumBits = numBits / 2;
@@ -58,6 +62,35 @@ std::size_t World::PosHash::operator()(Pos const& pos) const {
    highBits <<= halfNumBits;
    assert((lowBits & highBits) == 0);
    return (lowBits | highBits);
+}
+
+void World::testHash() {
+   /*
+   World::PosHash hash{};
+   std::cerr << "-386: " << hash({-386, -128}) << '\n';
+   std::cerr << "-385: " << hash({-385, -128}) << '\n';
+   std::cerr << "-384: " << hash({-384, -128}) << '\n';
+   std::cerr << "-383: " << hash({-383, -128}) << '\n';
+   std::cerr << "-382: " << hash({-382, -128}) << '\n';
+   std::cerr << "-130: " << hash({-130, -128}) << '\n';
+   std::cerr << "-129: " << hash({-129, -128}) << '\n';
+   std::cerr << "-128: " << hash({-128, -128}) << '\n';
+   std::cerr << "-127: " << hash({-127, -128}) << '\n';
+   std::cerr << "-126: " << hash({-126, -128}) << '\n';
+   std::cerr << "-1: " << hash({-1, -128}) << '\n';
+   std::cerr << "0: " << hash({0, -128}) << '\n';
+   std::cerr << "1: " << hash({1, -128}) << '\n';
+   std::cerr << "126: " << hash({126, -128}) << '\n';
+   std::cerr << "127: " << hash({127, -128}) << '\n';
+   std::cerr << "128: " << hash({128, -128}) << '\n';
+   std::cerr << "129: " << hash({129, -128}) << '\n';
+   std::cerr << "130: " << hash({130, -128}) << '\n';
+   std::cerr << "382: " << hash({382, -128}) << '\n';
+   std::cerr << "383: " << hash({383, -128}) << '\n';
+   std::cerr << "384: " << hash({384, -128}) << '\n';
+   std::cerr << "385: " << hash({385, -128}) << '\n';
+   std::cerr << "386: " << hash({386, -128}) << '\n';
+   */
 }
 
 // vim: tw=90 sts=-1 sw=3 et
