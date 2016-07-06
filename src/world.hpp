@@ -11,7 +11,6 @@
 
 #include "creature.hpp"
 #include "creature_type.hpp"
-#include "tile.hpp"
 
 enum class TileType : uint8_t { deepWater = 0, water, sand, dirt, rock, snow };
 

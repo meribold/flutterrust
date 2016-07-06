@@ -33,8 +33,17 @@ class MainFrame : public wxFrame {
    void onPlayPause(wxCommandEvent&);
    void onStep(wxCommandEvent&);
 
-   // Pixels.
-   std::int64_t scrollOffX = 37, scrollOffY = -42;
+   // Process a wxEVT_LEFT_DOWN; captures the mouse.
+   void onLeftDown(wxMouseEvent&);
+   // Process a wxEVT_MOUSE_CAPTURE_LOST; handling this event is mandatory for an
+   // application that captures the mouse.
+   void onCaptureLost(wxMouseCaptureLostEvent&);
+   void onMotion(wxMouseEvent&);  // Process a wxEVT_MOTION.
+   void onLeftUp(wxMouseEvent&);  // Process a wxEVT_LEFT_UP.
+
+   // In pixels.
+   std::int64_t scrollOffX = 0, scrollOffY = 0;
+   wxPoint oldMousePos;
 
    wxMenuBar* menuBar;
    wxPanel* topPanel;

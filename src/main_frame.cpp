@@ -106,6 +106,9 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
    playPauseButton->Bind(wxEVT_BUTTON, &MainFrame::onPlayPause, this);
    stepButton->Bind(wxEVT_BUTTON, &MainFrame::onStep, this);
 
+   worldPanel->Bind(wxEVT_LEFT_DOWN, &MainFrame::onLeftDown, this);
+   worldPanel->Bind(wxEVT_MOUSE_CAPTURE_LOST, &MainFrame::onCaptureLost, this);
+
    creatureChoice->SetSelection(0);
    updateAttributes(0);
 }
@@ -138,16 +141,36 @@ void MainFrame::toggleControlsBox(wxMouseEvent&) {
 
 // Process a wxEVT_PAINT event.
 void MainFrame::onPaint(wxPaintEvent&) {
-   constexpr std::size_t tileSize = 32;
+   // Signed, because using an unsigned type in operations with signed ones can cause the
+   // signed operands to be converted to unsigned types ("usual arithmetic conversions").
+   constexpr int tileSize = 32;
    wxAutoBufferedPaintDC dC{worldPanel};  // Prevents tearing.
    int panelWidth, panelHeight;
    dC.GetSize(&panelWidth, &panelHeight);
 
-   std::int64_t initialWorldX = (scrollOffX - tileSize + 1) / tileSize;
-   std::int64_t worldY = (scrollOffY - tileSize + 1) / tileSize;
+   std::int64_t initialWorldX;
+   // initialWorldX = (scrollOffX - tileSize + 1) / tileSize;
+   if (scrollOffX >= 0) {
+      initialWorldX = scrollOffX / tileSize;
+   } else {
+      initialWorldX = (scrollOffX + 1) / tileSize - 1;
+   }
+   std::int64_t worldY;
+   if (scrollOffY >= 0) {
+      worldY = scrollOffY / tileSize;
+   } else {
+      worldY = (scrollOffY + 1) / tileSize - 1;
+   }
 
-   std::int64_t initialDrawOffsetX = scrollOffX % tileSize;
-   std::int64_t drawOffsetY = scrollOffY % tileSize;
+   // std::cerr << "scrollOff: (" << scrollOffX << ", " << scrollOffY << ")\n";
+   // std::cerr << "initialWorldX: " << initialWorldX << '\n';
+   // std::cerr << "initialWorldY: " << worldY << '\n';
+
+   // Example: assume scrollOffX is (-33).  That means we scrolled 33 pixels to the left
+   // (by moving the mouse to the right).  The value of initialWorldX is (-2), but we can
+   // only show one pixel of the leftmost column of tiles: start drawing at (-31).
+   std::int64_t initialDrawOffsetX = (-scrollOffX) % tileSize;
+   std::int64_t drawOffsetY = (-scrollOffY) % tileSize;
    if (initialDrawOffsetX > 0) initialDrawOffsetX -= tileSize;
    if (drawOffsetY > 0) drawOffsetY -= tileSize;
 
@@ -182,6 +205,54 @@ void MainFrame::onPlayPause(wxCommandEvent&) {
 void MainFrame::onStep(wxCommandEvent&) {
    std::cerr << "Step\n";
    world.step();
+}
+
+void MainFrame::onLeftDown(wxMouseEvent& event) {
+   assert(!HasCapture());
+   CaptureMouse();
+
+   oldMousePos = event.GetPosition();
+
+   Bind(wxEVT_MOTION, &MainFrame::onMotion, this);
+   Bind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
+
+   // It is generally recommended to Skip() all non-command events [1].  This allows other
+   // event handlers (including default ones) to react to the event.  Without it,
+   // processing of the event stops.
+   // [1]: http://docs.wxwidgets.org/trunk/classwx_event.html#a98eb20b76106f9a933c2eb3ee11
+   event.Skip();
+}
+
+// Process a wxEVT_MOUSE_CAPTURE_LOST; handling this event is mandatory for an application
+// that captures the mouse.
+void MainFrame::onCaptureLost(wxMouseCaptureLostEvent& event) {
+   assert(!HasCapture());
+   bool didUnbind = Unbind(wxEVT_MOTION, &MainFrame::onMotion, this) &&
+                    Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
+   assert(didUnbind);
+   event.Skip();
+}
+
+// Process a wxEVT_MOTION.
+void MainFrame::onMotion(wxMouseEvent& event) {
+   assert(HasCapture());
+   scrollOffX -= event.GetX() - oldMousePos.x;
+   scrollOffY -= event.GetY() - oldMousePos.y;
+   oldMousePos.x = event.GetX();
+   oldMousePos.y = event.GetY();
+   Refresh(false);
+   event.Skip();
+}
+
+// Process a wxEVT_LEFT_UP.
+void MainFrame::onLeftUp(wxMouseEvent&) {
+   assert(HasCapture());
+   bool didUnbind = Unbind(wxEVT_MOTION, &MainFrame::onMotion, this) &&
+                    Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
+   assert(didUnbind);
+   ReleaseMouse();
+   // Somehow skipping this event crashes the program  :/
+   // event.Skip();
 }
 
 // vim: tw=90 sts=-1 sw=3 et
