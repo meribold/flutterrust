@@ -21,10 +21,10 @@ MAKEFLAGS += --no-builtin-rules
 CXX       ?= g++
 WXCONFIG  ?= wx-config
 ICUCONFIG ?= icu-config
-CPPFLAGS  += -Wall -Wextra -pedantic -g -O
+CPPFLAGS  += -Wall -Wextra -pedantic -g
 # wxWidge ts' uses old-style casts, so I need to disable the warnings about them.
 CXXFLAGS  += -std=c++14 -Wno-old-style-cast
-LDFLAGS   += -g -O
+LDFLAGS   += -g
 LDLIBS    +=
 ARFLAGS   += cs
 

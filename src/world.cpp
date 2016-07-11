@@ -1,6 +1,6 @@
 #include <cassert>    // assert
 #include <climits>    // CHAR_BIT
-#include <cmath>      // pow
+#include <cmath>      // pow, lround
 #include <cstdint>    // int64_t
 #include <fstream>    // ifstream
 #include <stdexcept>  // runtime_error
@@ -22,12 +22,69 @@ World::World(std::string filePath) : creatureTypes{} {
    creatureTypes = loadCreatureTypes(std::move(iStream), errors);
 }
 
-void World::step() {}
+void World::step() {
+   // ...
+}
 
-TileType World::getTileType(int x, int y) const {
-   if ((x + y) % 2 == 0)
-      return TileType::water;
-   return TileType::deepWater;
+bool World::isCached(std::int64_t x, std::int64_t y) {
+   return (left <= x && x < left + 2 * terrainBlockSize && top <= y &&
+           y < top + 2 * terrainBlockSize);
+}
+
+void World::assertCached(std::int64_t left, std::int64_t top, std::int64_t width,
+                         std::int64_t height) {
+   std::int64_t right = left + width;
+   std::int64_t bottom = top + height;
+   if (isCached(left, top) && isCached(right, bottom)) {
+      return;
+   }
+   // Figure out the indices of the top-left block we need.
+   auto centerX = left + width / 2;
+   auto centerY = top + height / 2;
+   // Round fairly.
+   std::int64_t i = std::lround(static_cast<float>(centerY) / terrainBlockSize);
+   std::int64_t j = std::lround(static_cast<float>(centerX) / terrainBlockSize);
+   // TODO: reuse blocks when possible.
+   terrainBlocks[0] = mapGen.getBlock(i - 1, j - 1);
+   terrainBlocks[1] = mapGen.getBlock(i - 1, j);
+   terrainBlocks[2] = mapGen.getBlock(i, j - 1);
+   terrainBlocks[3] = mapGen.getBlock(i, j);
+   this->top = (i - 1) * terrainBlockSize;
+   this->left = (j - 1) * terrainBlockSize;
+}
+
+// Increasing x means going right, increasing y means going down.
+TileType World::getTileType(std::int64_t x, std::int64_t y) const {
+#ifndef NDEBUG
+   std::int64_t right = left + 2 * terrainBlockSize;
+   std::int64_t bottom = top + 2 * terrainBlockSize;
+   assert(left <= x && x < right);
+   assert(top <= y && y < bottom);
+#endif
+   auto i = y - top;
+   auto j = x - left;
+   auto blockIndex = 2 * (i / terrainBlockSize) + j / terrainBlockSize;
+   i %= terrainBlockSize;
+   j %= terrainBlockSize;
+   assert(0 <= i && i < terrainBlockSize);
+   assert(0 <= j && j < terrainBlockSize);
+   return terrainBlocks[blockIndex][i][j];
+   /*
+   auto blockIndex = 0;
+   auto i = y - top;
+   auto j = x - left;
+   if (i >= terrainBlockSize) {
+      // Use one of the bottom blocks.
+      blockIndex += 2;
+      i -= terrainBlockSize;
+   }
+   if (j >= terrainBlockSize) {
+      // Use one of the right blocks.
+      blockIndex += 1;
+      j -= terrainBlockSize;
+   }
+   return terrainBlocks[blockIndex][i][j];
+   */
 }
 
 // Map a signed integer number z to the interval [0, 2^n - 1].  Injective for the domain
@@ -52,9 +109,9 @@ std::size_t World::PosHash::operator()(Pos const& pos) const {
    // Assert that size_t has an even number of bits.
    static_assert(numBits / 2 * 2 == numBits, "Seriously?");
    constexpr std::size_t halfNumBits = numBits / 2;
-   // static_assert(sizeof(int) == sizeof(int64_t), "Oh.  TIL.");
-   std::size_t lowBits = toNBits<halfNumBits, int64_t>(pos[0]);
-   std::size_t highBits = toNBits<halfNumBits, int64_t>(pos[1]);
+   // static_assert(sizeof(int) == sizeof(std::int64_t), "Oh.  TIL.");
+   std::size_t lowBits = toNBits<halfNumBits, std::int64_t>(pos[0]);
+   std::size_t highBits = toNBits<halfNumBits, std::int64_t>(pos[1]);
    // If size_t had 16 bits, lowBits and highBits would be in the range [0, 255] now (so
    // they only use 8 bits).
    assert((lowBits >> halfNumBits) == 0);

@@ -41,7 +41,10 @@ class MainFrame : public wxFrame {
    void onMotion(wxMouseEvent&);  // Process a wxEVT_MOTION.
    void onLeftUp(wxMouseEvent&);  // Process a wxEVT_LEFT_UP.
 
-   // In pixels.
+   // All this is given in pixels.
+   int tileSize = 32;  // Signed, because using an unsigned type in operations with signed
+                       // ones can cause the signed operands to be converted to unsigned
+                       // types ("usual arithmetic conversions").
    std::int64_t scrollOffX = 0, scrollOffY = 0;
    wxPoint oldMousePos;
 

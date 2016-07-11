@@ -1,10 +1,13 @@
 #include "main_frame.hpp"
 
-#include <cassert>     // assert
 #include <cstddef>     // size_t
 #include <cstdint>     // int64_t
 #include <functional>  // bind
-#include <iostream>    // TODO: remove
+
+#include <cassert>  // assert
+#ifndef NDEBUG
+#include <iostream>
+#endif
 
 #include <wx/colour.h>    // wxColour
 #include <wx/dcbuffer.h>  // wxAutoBufferedPaintDC
@@ -141,15 +144,11 @@ void MainFrame::toggleControlsBox(wxMouseEvent&) {
 
 // Process a wxEVT_PAINT event.
 void MainFrame::onPaint(wxPaintEvent&) {
-   // Signed, because using an unsigned type in operations with signed ones can cause the
-   // signed operands to be converted to unsigned types ("usual arithmetic conversions").
-   constexpr int tileSize = 32;
    wxAutoBufferedPaintDC dC{worldPanel};  // Prevents tearing.
    int panelWidth, panelHeight;
    dC.GetSize(&panelWidth, &panelHeight);
 
    std::int64_t initialWorldX;
-   // initialWorldX = (scrollOffX - tileSize + 1) / tileSize;
    if (scrollOffX >= 0) {
       initialWorldX = scrollOffX / tileSize;
    } else {
@@ -162,9 +161,12 @@ void MainFrame::onPaint(wxPaintEvent&) {
       worldY = (scrollOffY + 1) / tileSize - 1;
    }
 
-   // std::cerr << "scrollOff: (" << scrollOffX << ", " << scrollOffY << ")\n";
-   // std::cerr << "initialWorldX: " << initialWorldX << '\n';
-   // std::cerr << "initialWorldY: " << worldY << '\n';
+   // Make sure the area we are about to access is available.  This will update the
+   // terrain cache if necessary.  Querying terrain outside of the cached area results in
+   // invalid array accesses and probably crashes the program (no bounds-checking is
+   // performed).  Creatures outside of the cached area are not simulated.
+   world.assertCached(initialWorldX, worldY, (panelWidth + tileSize - 1) / tileSize,
+                      (panelHeight + tileSize - 1) / tileSize);
 
    // Example: assume scrollOffX is (-33).  That means we scrolled 33 pixels to the left
    // (by moving the mouse to the right).  The value of initialWorldX is (-2), but we can
@@ -178,8 +180,9 @@ void MainFrame::onPaint(wxPaintEvent&) {
       auto worldX = initialWorldX;
       auto drawOffsetX = initialDrawOffsetX;
       while (drawOffsetX < panelWidth) {
-         dC.DrawBitmap(terrainBitmaps[toUT(world.getTileType(worldX, worldY))],
-                       drawOffsetX, drawOffsetY);
+         auto bitmapIndex = toUT(world.getTileType(worldX, worldY));
+         assert(bitmapIndex < terrainBitmaps.size());
+         dC.DrawBitmap(terrainBitmaps[bitmapIndex], drawOffsetX, drawOffsetY);
          ++worldX;
          drawOffsetX += tileSize;
       }
@@ -193,17 +196,25 @@ void MainFrame::onCreatureChoice(wxCommandEvent& event) {
    updateAttributes(index);
 }
 
-void MainFrame::onPlace(wxCommandEvent&) { std::cerr << "Place\n"; }
+void MainFrame::onPlace(wxCommandEvent&) {
+#ifndef NDEBUG
+   std::cerr << "Place\n";
+#endif
+}
 
 void MainFrame::onPlayPause(wxCommandEvent&) {
+#ifndef NDEBUG
    if (true)  // TODO
       std::cerr << "Play\n";
    else
       std::cerr << "Pause\n";
+#endif
 }
 
 void MainFrame::onStep(wxCommandEvent&) {
+#ifndef NDEBUG
    std::cerr << "Step\n";
+#endif
    world.step();
 }
 
