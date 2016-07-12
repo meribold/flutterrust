@@ -4,7 +4,7 @@
 #include <cassert>  // assert
 #include <cstdint>  // int64_t
 
-// #define NDEBUG
+#define NDEBUG
 
 #ifndef NDEBUG
 #include <iostream>
