@@ -4,16 +4,16 @@
 #include <cstdint>     // int64_t
 #include <functional>  // bind
 
-#include <cassert>  // assert
-#ifndef NDEBUG
-#include <iostream>
-#endif
-
 #include <wx/colour.h>    // wxColour
 #include <wx/dcbuffer.h>  // wxAutoBufferedPaintDC
 #include <wx/statline.h>  // wxStaticLine
 
 #include "tuple_helpers.hpp"  // toUT
+
+#include <cassert>  // assert
+#ifndef NDEBUG
+#include <iostream>
+#endif
 
 MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
     : wxFrame{nullptr, wxID_ANY, u8"flutterrust", pos, size},
@@ -41,9 +41,6 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
       playPauseButton{new wxButton{controlsBox, wxID_ANY, u8"Unpause"}},
       stepButton{new wxButton{controlsBox, wxID_ANY, u8"Step"}},
       world{u8"CreatureTable.txt"} {
-   // for (auto i = toUT(TileType::deepWater); i <= toUT(TileType::snow); ++i) {
-   //    terrainBitmaps[i];
-   // }
    terrainBitmaps[0].LoadFile(u8"icons/terrain/deep_sea.tga", wxBITMAP_TYPE_TGA);
    terrainBitmaps[1].LoadFile(u8"icons/terrain/shallow_water.tga", wxBITMAP_TYPE_TGA);
    terrainBitmaps[2].LoadFile(u8"icons/terrain/sand.tga", wxBITMAP_TYPE_TGA);

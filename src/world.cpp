@@ -96,60 +96,6 @@ void World::assertCached(std::int64_t left, std::int64_t top, std::int64_t width
       }
    }
 
-   // static std::size_t(*stuff[1])[2]{new std::size_t[1][2]{{3, 0}}};
-
-   /*
-   bool updated[4] = {false, false, false, false};
-   // When both changed by 1 or 0, we can reuse at least one terrain block.
-   if (std::abs(deltaI) <= 1 && std::abs(deltaJ) <= 1) {
-      if (deltaI == 0) {
-         // Only the column changed.
-         if (deltaJ == 1) {
-            // We scrolled right.  Reuse the right blocks: 1 and 3.
-            terrainBlocks[0] = terrainBlocks[1];
-            updated[0] = true;
-            terrainBlocks[2] = terrainBlocks[3];
-            updated[2] = true;
-         } else {
-            // We scrolled left.  Reuse the left blocks: 0 and 2.
-            terrainBlocks[1] = terrainBlocks[0];
-            updated[1] = true;
-            terrainBlocks[3] = terrainBlocks[2];
-            updated[3] = true;
-         }
-      } else if (deltaJ == 0) {
-         // Only the row changed.
-         if (deltaI == 1) {
-            // We scrolled down.  Reuse the bottom blocks: 2 and 3.
-            terrainBlocks[0] = terrainBlocks[2];
-            updated[0] = true;
-            terrainBlocks[1] = terrainBlocks[3];
-            updated[1] = true;
-         } else {
-            // We scrolled up.  Reuse the top blocks: 0 and 1.
-            terrainBlocks[2] = terrainBlocks[0];
-            updated[2] = true;
-            terrainBlocks[3] = terrainBlocks[1];
-            updated[3] = true;
-         }
-      } else {  // Only one block can be reused.
-         // One of {-3, -1, 1, 3} corresponding to scrolling up and left, up and right,
-         // down and left, and down and right, respectively.
-         auto direction = 2 * deltaI + deltaJ;
-         // One of {0, 1, 2, 3}.
-         auto reuse = (direction + 3) / 2;
-         terrainBlocks[reuse - direction] = terrainBlocks[reuse];
-         updated[reuse - direction] = true;
-      }
-   }
-   for (std::size_t n = 0; n < 4; ++n) {
-      if (!updated[n]) {
-         auto& offset = offsets[n];
-         terrainBlocks[n] = mapGen.getBlock(i + offset[0], j + offset[1]);
-      }
-   }
-   */
-
    this->top = i * terrainBlockSize;
    this->left = j * terrainBlockSize;
 }
@@ -170,22 +116,6 @@ TileType World::getTileType(std::int64_t x, std::int64_t y) const {
    assert(0 <= i && i < terrainBlockSize);
    assert(0 <= j && j < terrainBlockSize);
    return terrainBlocks[blockIndex][i][j];
-   /*
-   auto blockIndex = 0;
-   auto i = y - top;
-   auto j = x - left;
-   if (i >= terrainBlockSize) {
-      // Use one of the bottom blocks.
-      blockIndex += 2;
-      i -= terrainBlockSize;
-   }
-   if (j >= terrainBlockSize) {
-      // Use one of the right blocks.
-      blockIndex += 1;
-      j -= terrainBlockSize;
-   }
-   return terrainBlocks[blockIndex][i][j];
-   */
 }
 
 // Map a signed integer number z to the interval [0, 2^n - 1].  Injective for the domain

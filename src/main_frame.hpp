@@ -25,8 +25,6 @@ class MainFrame : public wxFrame {
    void updateAttributes(std::size_t creatureIndex);
 
    void toggleControlsBox(wxMouseEvent&);
-   // void onEnterControlsBox(wxMouseEvent&);
-   // void onLeaveControlsBox(wxMouseEvent&);
    void onPaint(wxPaintEvent&);
    void onCreatureChoice(wxCommandEvent&);
    void onPlace(wxCommandEvent&);
