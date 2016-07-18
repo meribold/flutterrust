@@ -22,9 +22,11 @@ CXX       ?= g++
 WXCONFIG  ?= wx-config
 ICUCONFIG ?= icu-config
 CPPFLAGS  += -Wall -Wextra -pedantic -g
+# CPPFLAGS  += -O3 -flto
 # wxWidge ts' uses old-style casts, so I need to disable the warnings about them.
 CXXFLAGS  += -std=c++14 -Wno-old-style-cast
 LDFLAGS   += -g
+# LDFLAGS   += -O3 -flto -fuse-linker-plugin
 LDLIBS    +=
 ARFLAGS   += cs
 
