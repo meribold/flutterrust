@@ -178,13 +178,13 @@ MapGenerator::TerrainBlock MapGenerator::getBlock(std::int64_t row,
 void MapGenerator::seedRNG(std::int64_t i, std::int64_t j) const {
    // Seed the PRNG.  FIXME: do it in a way that doesn't suck.
    SeedType blockSeed;
-   if (i < 0) {
+   if (i <= 0) {
       blockSeed = (-i) * 2;
    } else {
       blockSeed = i * 2 - 1;
    }
    blockSeed <<= 16;
-   if (j < 0) {
+   if (j <= 0) {
       blockSeed |= (-j) * 2;
    } else {
       blockSeed |= j * 2 - 1;
