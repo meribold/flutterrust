@@ -1,10 +1,15 @@
 #include "map_generator.hpp"
 
 #include <array>
+#include <cstring>
 #include <cassert>  // assert
 #include <cstdint>  // int64_t
 
-#define NDEBUG
+#include <openssl/sha.h>
+
+#ifndef DEBUG
+// #define NDEBUG
+#endif
 
 #ifndef NDEBUG
 #include <iostream>
@@ -175,26 +180,62 @@ MapGenerator::TerrainBlock MapGenerator::getBlock(std::int64_t row,
    return terrainBlock;
 }
 
+bool simpleSHA256(void* input, unsigned long length, unsigned char* md)
+{
+    SHA256_CTX context;
+    if(!SHA256_Init(&context))
+        return false;
+
+    if(!SHA256_Update(&context, (unsigned char*)input, length))
+        return false;
+
+    if(!SHA256_Final(md, &context))
+        return false;
+
+    return true;
+}
+
 void MapGenerator::seedRNG(std::int64_t i, std::int64_t j) const {
    // Seed the PRNG.  FIXME: do it in a way that doesn't suck.
    SeedType blockSeed;
-   if (i < 0) {
-      blockSeed = (-i) * 2;
-   } else {
-      blockSeed = i * 2 - 1;
+   // if (i <= 0) {
+   //    blockSeed = (-i) * 2;
+   // } else {
+   //    blockSeed = i * 2 - 1;
+   // }
+   // // i-1  =>  blockSeed: (-(-1)) * 2 = 2
+   // blockSeed <<= 16;
+   // if (j <= 0) {
+   //    blockSeed |= (-j) * 2;
+   // } else {
+   //    blockSeed |= j * 2 - 1;
+   // }
+
+
+   unsigned char dataBuffer[24];
+   std::memcpy(dataBuffer, &i, sizeof i);
+   std::memcpy(&dataBuffer[8], &j, sizeof j);
+   assert(sizeof seed == 8);
+   std::memcpy(&dataBuffer[16], &this->seed, sizeof seed);
+   unsigned char md[SHA256_DIGEST_LENGTH]; // 32 bytes
+   if(!simpleSHA256(dataBuffer, sizeof dataBuffer, md))
+   {
+      // handle error
    }
-   blockSeed <<= 16;
-   if (j < 0) {
-      blockSeed |= (-j) * 2;
-   } else {
-      blockSeed |= j * 2 - 1;
+   // std::cerr << sizeof(md) << '\n';
+   // std::cerr << sizeof blockSeed << '\n';
+   for (int n = 0; n < sizeof(md) / sizeof(blockSeed); ++n) {
+      SeedType tmp;
+      std::memcpy(&blockSeed, md + sizeof(blockSeed) * n, sizeof blockSeed);
+      blockSeed ^= tmp;
    }
-   rNGen.seed(blockSeed ^ seed);
+
+   std::cerr << "seed: " << seed << '\n';
+   std::cerr << "(i, j): " << i << ", " << j << ", blockSeed: " << blockSeed << ", seed: " << '\n';
+   rNGen.seed(blockSeed);
    // Throw some random numbers away.  The first random numbers generated from similar
    // seeds are also very similar.
-   rNDist(rNGen);
-   rNDist(rNGen);
-   rNDist(rNGen);
+   std::cerr << rNDist(rNGen) << '\n';
 }
 
 std::array<float, 2> MapGenerator::getGradient() const {
