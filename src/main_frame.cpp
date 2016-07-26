@@ -1,11 +1,13 @@
 #include "main_frame.hpp"
 
+#include <array>
 #include <cstddef>     // size_t
 #include <cstdint>     // int64_t
 #include <functional>  // bind
 
 #include <wx/colour.h>    // wxColour
 #include <wx/dcbuffer.h>  // wxAutoBufferedPaintDC
+#include <wx/filename.h>  // wxFileName
 #include <wx/statline.h>  // wxStaticLine
 
 #include "tuple_helpers.hpp"  // toUT
@@ -15,7 +17,7 @@
 #include <iostream>
 #endif
 
-MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
+MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSize& size)
     : wxFrame{nullptr, wxID_ANY, u8"flutterrust", pos, size},
       menuBar{new wxMenuBar{}},
       topPanel{new wxPanel{this}},
@@ -40,14 +42,19 @@ MainFrame::MainFrame(const wxPoint& pos, const wxSize& size)
       placeCreatureButton{new wxButton{controlsBox, wxID_ANY, u8"Place"}},
       playPauseButton{new wxButton{controlsBox, wxID_ANY, u8"Unpause"}},
       stepButton{new wxButton{controlsBox, wxID_ANY, u8"Step"}},
-      world{u8"CreatureTable.txt"} {
-   terrainBitmaps[0].LoadFile(u8"icons/terrain/deep_sea.tga", wxBITMAP_TYPE_TGA);
-   terrainBitmaps[1].LoadFile(u8"icons/terrain/shallow_water.tga", wxBITMAP_TYPE_TGA);
-   terrainBitmaps[2].LoadFile(u8"icons/terrain/sand.tga", wxBITMAP_TYPE_TGA);
-   terrainBitmaps[3].LoadFile(u8"icons/terrain/earth.tga", wxBITMAP_TYPE_TGA);
-   terrainBitmaps[4].LoadFile(u8"icons/terrain/rocks.tga", wxBITMAP_TYPE_TGA);
-   terrainBitmaps[5].LoadFile(u8"icons/terrain/snow.tga", wxBITMAP_TYPE_TGA);
-
+      world{dataDir + static_cast<char>(wxFileName::GetPathSeparator()) +
+            u8"CreatureTable.txt"} {
+   {
+      const std::array<std::string, 6> fileNames{
+          u8"deep_sea", u8"shallow_water", u8"sand", u8"earth", u8"rocks", u8"snow"};
+      wxFileName filePath{dataDir, u8"", u8"tga", wxPATH_NATIVE};
+      filePath.AppendDir(u8"icons");
+      filePath.AppendDir(u8"terrain");
+      for (std::size_t i = 0; i < fileNames.size(); ++i) {
+         filePath.SetName(fileNames[i]);
+         terrainBitmaps[i].LoadFile(filePath.GetFullPath(), wxBITMAP_TYPE_TGA);
+      }
+   }
    for (const auto& type : world.creatureTypes) {
       creatureChoice->Append(std::get<cTFields::name>(type));
    }

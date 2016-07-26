@@ -19,7 +19,8 @@
 
 class MainFrame : public wxFrame {
   public:
-   MainFrame(const wxPoint& = wxDefaultPosition, const wxSize& = wxDefaultSize);
+   MainFrame(const std::string& dataDir, const wxPoint& = wxDefaultPosition,
+             const wxSize& = wxDefaultSize);
 
   private:
    void updateAttributes(std::size_t creatureIndex);

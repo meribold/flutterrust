@@ -2,7 +2,9 @@
 #include <typeinfo>  // typeid
 
 #include <wx/app.h>
-#include <wx/msgdlg.h>  // wxMessageDialog
+#include <wx/filename.h>  // wxFileName
+#include <wx/msgdlg.h>    // wxMessageDialog
+#include <wx/stdpaths.h>  // For getting the directory of the executable.
 
 #include "main_frame.hpp"
 
@@ -20,8 +22,9 @@ bool App::OnInit() {
    SetAppName(u8"flutterrust");
    SetAppDisplayName(u8"flutterrust");
 
+   wxFileName exeName{wxStandardPaths::Get().GetExecutablePath()};
    try {
-      mainFrame = new MainFrame{};
+      mainFrame = new MainFrame{exeName.GetPath().ToStdString()};
    } catch (const std::exception& e) {
       wxMessageDialog dialog{nullptr, u8"Exception caught.  Terminating.\n",
                              u8"Fatal error", wxICON_ERROR | wxOK};
