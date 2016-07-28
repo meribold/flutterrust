@@ -16,6 +16,8 @@
 
 class World {
   public:
+   using Pos = std::array<std::int64_t, 2>;
+
    World(std::string filePath);
 
    std::vector<CreatureType> creatureTypes;
@@ -33,21 +35,25 @@ class World {
 
    // Coordinates are relative to the top-left cached terrain block.  No bounds-checking
    // is performed.  To access coordinates outside of the cached terrain, setOrigin has to
-   // be called first.
+   // be called first (TODO).
    TileType getTileType(std::int64_t x, std::int64_t y) const;
 
-   // TODO getCreatureIterator()();
-   // TODO getCreatures()(int row, int col);
-
-   void testHash();
+   bool addCreature(std::size_t creatureType, std::int64_t x, std::int64_t y);
 
   private:
-   using Pos = std::int64_t[2];
-
    struct PosHash {
       std::size_t operator()(Pos const& pos) const;
    };
 
+  public:
+   std::unordered_multimap<World::Pos, Creature, World::PosHash> creatures;
+
+   // TODO getCreatureIterator()();
+   decltype(creatures)::const_iterator getCreatures(std::int64_t x, std::int64_t y);
+
+   void testHash();
+
+  private:
    MapGenerator mapGen;
    static constexpr std::int64_t terrainBlockSize = MapGenerator::blockSize;
    using TerrainBlock = MapGenerator::TerrainBlock;
@@ -60,8 +66,6 @@ class World {
    // MapGenerator will be invoked to update the cache.
    std::int64_t top = std::numeric_limits<std::int64_t>::lowest();
    std::int64_t left = std::numeric_limits<std::int64_t>::lowest();
-
-   std::unordered_multimap<World::Pos, Creature, World::PosHash> creatures;
 };
 
 #endif  // WORLD_HPP_L42R9DKX

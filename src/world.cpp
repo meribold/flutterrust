@@ -102,7 +102,7 @@ void World::assertCached(std::int64_t left, std::int64_t top, std::int64_t width
 
 // Increasing x means going right, increasing y means going down.
 TileType World::getTileType(std::int64_t x, std::int64_t y) const {
-#ifndef NDEBUG
+#ifdef DEBUG
    std::int64_t right = left + 2 * terrainBlockSize;
    std::int64_t bottom = top + 2 * terrainBlockSize;
    assert(left <= x && x < right);
@@ -116,6 +116,20 @@ TileType World::getTileType(std::int64_t x, std::int64_t y) const {
    assert(0 <= i && i < terrainBlockSize);
    assert(0 <= j && j < terrainBlockSize);
    return terrainBlocks[blockIndex][i][j];
+}
+
+bool World::addCreature(std::size_t creatureType, std::int64_t x, std::int64_t y) {
+   // TODO: when trying to place a creature on a tile of hostile type (e.g. a fish on
+   // land), don't do anything and return false.
+   // const auto& creatureType = creatureTypes[creatureType];
+   // creatures.emplace(Pos{x, y}, Creature{creatureType});
+   creatures.emplace(Pos{x, y}, creatureType);
+   return true;
+}
+
+decltype(World::creatures)::const_iterator World::getCreatures(std::int64_t x,
+                                                               std::int64_t y) {
+   return creatures.find({x, y});
 }
 
 // Map a signed integer number z to the interval [0, 2^n - 1].  Injective for the domain

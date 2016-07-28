@@ -4,6 +4,7 @@
 #include <array>
 #include <cstddef>  // size_t
 #include <cstdint>  // int64_t
+#include <vector>
 
 #include <wx/button.h>
 #include <wx/choice.h>
@@ -23,6 +24,10 @@ class MainFrame : public wxFrame {
              const wxSize& = wxDefaultSize);
 
   private:
+   std::int64_t panelToWorldX(int panelX);
+   std::int64_t panelToWorldY(int panelY);
+   wxRect getTileArea(int x, int y);
+
    void updateAttributes(std::size_t creatureIndex);
 
    void toggleControlsBox(wxMouseEvent&);
@@ -40,12 +45,19 @@ class MainFrame : public wxFrame {
    void onMotion(wxMouseEvent&);  // Process a wxEVT_MOTION.
    void onLeftUp(wxMouseEvent&);  // Process a wxEVT_LEFT_UP.
 
+   // Process a wxEVT_CONTEXT_MENU inside the worldPanel.
+   void onContextMenuRequested(wxContextMenuEvent&);
+   // Process a wxEVT_MENU when an item from the worldPanel's context menu is selected.
+   void onMenuItemSelected(wxCommandEvent&);
+
    // All this is given in pixels.
-   int tileSize = 32;  // Signed, because using an unsigned type in operations with signed
-                       // ones can cause the signed operands to be converted to unsigned
-                       // types ("usual arithmetic conversions").
+   const int tileSize = 32;  // Signed, because using an unsigned type in operations with
+                             // signed ones can cause the signed operands to be converted
+                             // to unsigned types ("usual arithmetic conversions").
    std::int64_t scrollOffX = 0, scrollOffY = 0;
    wxPoint oldMousePos;
+
+   wxPoint contextMenuPos;
 
    wxMenuBar* menuBar;
    wxPanel* topPanel;
@@ -60,8 +72,12 @@ class MainFrame : public wxFrame {
    wxButton* placeCreatureButton;
    wxButton* playPauseButton;
    wxButton* stepButton;
+   // FIXME: this is probably not deleted automatically
+   // (http://docs.wxwidgets.org/trunk/classwx_menu.html)
+   wxMenu* contextMenu;
 
    std::array<wxBitmap, 6> terrainBitmaps;
+   std::vector<wxBitmap> creatureBitmaps;
    World world;
 };
 
