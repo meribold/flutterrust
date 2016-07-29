@@ -6,8 +6,6 @@
 # Ignore prerequisite files automatically generated for GNU Make.
 *.d
 
-src/flutterrust
-task1/src/task1
-task2/src/task2
+build
 
 # vim: tw=90 sts=-1 sw=3 et

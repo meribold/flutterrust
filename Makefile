@@ -21,16 +21,30 @@ MAKEFLAGS += --no-builtin-rules
 CXX       ?= g++
 WXCONFIG  ?= wx-config
 ICUCONFIG ?= icu-config
-CPPFLAGS  += -Wall -Wextra -pedantic -g
-# CPPFLAGS  += -O3 -flto
-# wxWidge ts' uses old-style casts, so I need to disable the warnings about them.
+CPPFLAGS  += -Wall -Wextra -pedantic
+# wxWidgets' uses old-style casts, so I need to disable the warnings about them.
 CXXFLAGS  += -std=c++14 -Wno-old-style-cast
-LDFLAGS   += -g
-# LDFLAGS   += -O3 -flto -fuse-linker-plugin
+LDFLAGS   +=
 LDLIBS    +=
 ARFLAGS   += cs
 
 ##########################################################################################
+
+# Default is release build so users can do a normal make.
+DEBUG ?= 0
+ifeq ($(DEBUG), 0)
+   CPPFLAGS := -DNDEBUG $(CPPFLAGS)
+   CXXFLAGS := -O3 -flto $(CXXFLAGS)
+   LDFLAGS := -O3 -flto -fuse-linker-plugin $(LDFLAGS)
+   OBJDIR := build/release
+else
+   CPPFLAGS := -DDEBUG $(CPPFLAGS)
+   CXXFLAGS := -g -Og $(CXXFLAGS)
+   LDFLAGS := -g -Og $(LDFLAGS)
+   OBJDIR := build/debug
+endif
+# http://stackoverflow.com/q/1079832
+# http://stackoverflow.com/q/792217
 
 # Taken from "Managing Projects With GNU Make".
 subdirectory = $(patsubst %/Module.mk,%, \
@@ -53,8 +67,8 @@ all:
 
 include $(shell find -name 'Module.mk')
 
-prereq_files := $(sources:.cpp=.d)
-objects      := $(sources:.cpp=.o)
+prereq_files := $(addprefix $(OBJDIR)/,$(subst src/,,$(sources:.cpp=.d)))
+objects      := $(addprefix $(OBJDIR)/,$(subst src/,,$(sources:.cpp=.o)))
 
 # All whitespace-separated words in the working directory and its subdirectories that do
 # match any of the pattern words $(prereq_files).  File names shall not contain the "%"
@@ -62,7 +76,7 @@ objects      := $(sources:.cpp=.o)
 existent_prereqs := \
    $(filter $(prereq_files),$(shell find -regex '.*\.d$$' -printf '%P\n'))
 
-# Was any goal (other than `clean`) specified on the command line? None counts as `all`.
+# Was any goal (other than `clean`) specified on the command line?  None counts as `all`.
 ifneq ($(filter-out clean,$(or $(MAKECMDGOALS),all)),)
    # Include existent makefiles of prerequisites.  After reading in all those files none
    # of them will have to be updated.  Non-existent prerequisite files will be build along
@@ -79,6 +93,18 @@ all: $(programs) $(libraries)
 clean:
 	$(RM) $(prereq_files) $(objects) $(libraries) $(programs)
 
+# Calling `sort` removes duplicates.
+$(sort $(dir $(objects))):
+	mkdir -p $@
+
+all: $(OBJDIR)/icons $(OBJDIR)/CreatureTable.txt
+
+$(OBJDIR)/icons: | $(OBJDIR)
+	ln -s ../../icons $@
+
+$(OBJDIR)/CreatureTable.txt: | $(OBJDIR)/task1
+	ln -s ../../task1/CreatureTable.txt $@
+
 # If the target is not an existent file, then Make will imagine it to have been updated
 # whenever this rule is run -- and the rule should only be run when the target is not an
 # existent file.
@@ -92,7 +118,7 @@ $(prereq_files):
 
 # A call $(subst foo,bar,text) replaces each occurrence of 'foo' by 'bar' and does not
 # substitute 'foo' for 'bar' as I tend to misunderstand it recurringly.
-$(objects): $$(subst .o,.d,$$@)
-	$(CXX) -MMD $(all_cppflags) $(all_cxxflags) $(subst .o,.cpp,$@) -o $@
+$(objects): $$(subst .o,.d,$$@) | $$(dir $$@)
+	$(CXX) -MMD $(all_cppflags) $(all_cxxflags) $(subst $(OBJDIR)/,,$(dir $@))src/$(notdir $(@:.o=.cpp)) -o $@
 
 # vim: tw=90 ts=8 sts=-1 sw=3 noet
