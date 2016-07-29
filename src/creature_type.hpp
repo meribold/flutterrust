@@ -5,6 +5,12 @@
 
 using CreatureType = std::tuple<std::string, int, int, int, std::string, std::string>;
 
+// Names for the tuple elements to replace obscure code like `std::get<4>(creatureType)
+// with `std::get<cTFields::attributes>(creatureType).
+namespace cTFields {
+enum { name, strength, speed, lifetime, attributes, bitmap };
+}
+
 /*
 enum class CTFields { name, strength, speed, lifetime, attributes, bitmap };
 */
@@ -15,12 +21,6 @@ constexpr struct {
                bitmap = 5;
 } cTFields;
 */
-
-// Names for the tuple elements to replace obscure code like `std::get<4>(creatureType)
-// with `std::get<cTFields::attributes>(creatureType).
-namespace cTFields {
-   enum { name, strength, speed, lifetime, attributes, bitmap };
-}
 
 /*
 class CreatureType
@@ -37,6 +37,6 @@ class CreatureType
 };
 */
 
-#endif // CREATURE_TYPE_HPP_21UKGANC
+#endif  // CREATURE_TYPE_HPP_21UKGANC
 
 // vim: tw=90 sts=-1 sw=3 et

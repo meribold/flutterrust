@@ -10,13 +10,13 @@
 #include "resource_parser.hpp"
 
 std::vector<CreatureType> loadCreatureTypes(std::istream&&,
-   std::vector<std::string>& errors);
+                                            std::vector<std::string>& errors);
 
 // For those who don't care.
 std::vector<CreatureType> loadCreatureTypes(std::istream&&);
 
 #include "creature_parser.ipp"
 
-#endif // CREATURE_PARSER_HPP_BCCMAXUG
+#endif  // CREATURE_PARSER_HPP_BCCMAXUG
 
 // vim: tw=90 sts=-1 sw=3 et
