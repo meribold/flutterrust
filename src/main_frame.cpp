@@ -13,7 +13,7 @@
 #include "tuple_helpers.hpp"  // toUT
 
 #include <cassert>  // assert
-#ifndef NDEBUG
+#ifdef DEBUG
 #include <iostream>
 #endif
 
@@ -251,13 +251,13 @@ void MainFrame::onCreatureChoice(wxCommandEvent& event) {
 }
 
 void MainFrame::onPlace(wxCommandEvent&) {
-#ifndef NDEBUG
+#ifdef DEBUG
    std::cerr << "Place\n";
 #endif
 }
 
 void MainFrame::onPlayPause(wxCommandEvent&) {
-#ifndef NDEBUG
+#ifdef DEBUG
    if (true)  // TODO
       std::cerr << "Play\n";
    else
@@ -266,7 +266,7 @@ void MainFrame::onPlayPause(wxCommandEvent&) {
 }
 
 void MainFrame::onStep(wxCommandEvent&) {
-#ifndef NDEBUG
+#ifdef DEBUG
    std::cerr << "Step\n";
 #endif
    world.step();
@@ -291,10 +291,12 @@ void MainFrame::onLeftDown(wxMouseEvent& event) {
 // Process a wxEVT_MOUSE_CAPTURE_LOST; handling this event is mandatory for an application
 // that captures the mouse.
 void MainFrame::onCaptureLost(wxMouseCaptureLostEvent& event) {
+#ifdef DEBUG
    assert(!HasCapture());
    bool didUnbind = Unbind(wxEVT_MOTION, &MainFrame::onMotion, this) &&
                     Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
    assert(didUnbind);
+#endif
    event.Skip();
 }
 
@@ -311,10 +313,12 @@ void MainFrame::onMotion(wxMouseEvent& event) {
 
 // Process a wxEVT_LEFT_UP.
 void MainFrame::onLeftUp(wxMouseEvent&) {
+#ifdef DEBUG
    assert(HasCapture());
    bool didUnbind = Unbind(wxEVT_MOTION, &MainFrame::onMotion, this) &&
                     Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
    assert(didUnbind);
+#endif
    ReleaseMouse();
    // Somehow skipping this event crashes the program  :/
    // event.Skip();

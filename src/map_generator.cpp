@@ -4,9 +4,7 @@
 #include <cassert>  // assert
 #include <cstdint>  // int64_t
 
-#define NDEBUG
-
-#ifndef NDEBUG
+#ifdef DEBUG
 #include <iostream>
 #endif
 
@@ -86,7 +84,7 @@ MapGenerator::TerrainBlock MapGenerator::getBlock(std::int64_t row,
       }
    }
 
-#ifndef NDEBUG  // Assert all the gradients are unit vectors. {{{1
+#ifdef DEBUG  // Assert all the gradients are unit vectors. {{{1
    {
       constexpr float epsilon = 0.01f;
       for (std::size_t i = 0; i < size; ++i) {
@@ -108,7 +106,7 @@ MapGenerator::TerrainBlock MapGenerator::getBlock(std::int64_t row,
          // iterate over grid cells and avoid repeating this computation.
          std::array<std::size_t, 2> topLeft{j / gridSize, i / gridSize};
 
-#ifndef NDEBUG  // Assert use of topLeft to index gradients is correct. {{{1
+#ifdef DEBUG  // Assert use of topLeft to index gradients is correct. {{{1
          assert(topLeft[0] + 1 < gradients.size());
          assert(topLeft[1] + 1 < gradients[0].size());
 #endif  // }}}1
@@ -121,7 +119,7 @@ MapGenerator::TerrainBlock MapGenerator::getBlock(std::int64_t row,
          distance[2] = {distance[0][0], distance[0][1] - 1.f};
          distance[3] = {distance[1][0], distance[2][1]};
 
-#ifndef NDEBUG  // Validate value of distance[0]. {{{1
+#ifdef DEBUG  // Validate value of distance[0]. {{{1
          assert(0.f <= distance[0][0] && distance[0][0] <= 1.f);
          assert(0.f <= distance[0][1] && distance[0][1] <= 1.f);
 #endif  // }}}1
@@ -134,7 +132,7 @@ MapGenerator::TerrainBlock MapGenerator::getBlock(std::int64_t row,
              dotProduct(distance[2], gradients[topLeft[1] + 1][topLeft[0]]),
              dotProduct(distance[3], gradients[topLeft[1] + 1][topLeft[0] + 1])};
 
-#ifndef NDEBUG  // ... {{{1
+#ifdef DEBUG  // ... {{{1
          {
             constexpr float epsilon = 0.01f;
             constexpr float maxDist = std::sqrt(2) + epsilon;
