@@ -1,16 +1,15 @@
 #include <iostream>
 #include <string>
 #include <tuple>
-#include <utility> // std::move
+#include <utility>  // std::move
 #include <vector>
 
 namespace {
-   auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getAttrs, getPath);
+auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getAttrs, getPath);
 }
 
-std::vector<CreatureType>
-loadCreatureTypes(std::istream&& iStream, std::vector<std::string>& errors)
-{
+std::vector<CreatureType> loadCreatureTypes(std::istream&& iStream,
+                                            std::vector<std::string>& errors) {
    return loadResources<CreatureType>(std::move(iStream), extractors, errors);
 }
 
