@@ -102,12 +102,12 @@ void World::assertCached(std::int64_t left, std::int64_t top, std::int64_t width
 
 // Increasing x means going right, increasing y means going down.
 TileType World::getTileType(std::int64_t x, std::int64_t y) const {
-#ifdef DEBUG
+#ifdef DEBUG  // {{{1
    std::int64_t right = left + 2 * terrainBlockSize;
    std::int64_t bottom = top + 2 * terrainBlockSize;
    assert(left <= x && x < right);
    assert(top <= y && y < bottom);
-#endif
+#endif  // }}}1
    auto i = y - top;
    auto j = x - left;
    auto blockIndex = 2 * (i / terrainBlockSize) + j / terrainBlockSize;
@@ -118,13 +118,52 @@ TileType World::getTileType(std::int64_t x, std::int64_t y) const {
    return terrainBlocks[blockIndex][i][j];
 }
 
-bool World::addCreature(std::size_t creatureType, std::int64_t x, std::int64_t y) {
-   // TODO: when trying to place a creature on a tile of hostile type (e.g. a fish on
-   // land), don't do anything and return false.
-   // const auto& creatureType = creatureTypes[creatureType];
-   // creatures.emplace(Pos{x, y}, Creature{creatureType});
-   creatures.emplace(Pos{x, y}, creatureType);
+bool World::addCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y) {
+   // When trying to place a creature on a tile of hostile type (e.g. a fish on land),
+   // don't do anything and return false.
+   const TileType tileType = getTileType(x, y);
+   bool aquatic = std::get<cTFields::attributes>(creatureTypes[typeIndex]).isAquatic();
+   if (tileType == TileType::deepWater || tileType == TileType::water) {
+      if (!aquatic) return false;
+   } else {
+      if (aquatic) return false;
+   }
+   creatures.emplace(Pos{x, y}, typeIndex);
    return true;
+}
+
+const CreatureType& World::getCreatureType(const Creature& creature) const {
+   return creatureTypes[creature.getTypeIndex()];
+}
+
+const CreatureAttrs& World::getCreatureAttrs(const Creature& creature) const {
+   return std::get<cTFields::attributes>(getCreatureType(creature));
+}
+
+bool World::isAquatic(const Creature& creature) const {
+   return getCreatureAttrs(creature).isAquatic();
+}
+
+bool World::isTerrestrial(const Creature& creature) const {
+   return getCreatureAttrs(creature).isTerrestrial();
+}
+
+bool World::isPlant(const Creature& creature) const {
+   return getCreatureAttrs(creature).isPlant();
+}
+
+bool World::isAnimal(const Creature& creature) const {
+   return getCreatureAttrs(creature).isAnimal();
+}
+
+bool World::isHerbivore(const Creature& creature) const {
+   return getCreatureAttrs(creature).isHerbivore();
+}
+
+bool World::isCarnivore(const Creature& creature) const {
+   // Assert it's an animal; plants aren't partitioned into herbivores and carnivores.
+   assert(isAnimal(creature));
+   return getCreatureAttrs(creature).isCarnivore();
 }
 
 decltype(World::creatures)::const_iterator World::getCreatures(std::int64_t x,
@@ -195,4 +234,4 @@ void World::testHash() {
    */
 }
 
-// vim: tw=90 sts=-1 sw=3 et
+// vim: tw=90 sts=-1 sw=3 et fdm=marker

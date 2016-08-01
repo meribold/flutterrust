@@ -1,11 +1,30 @@
 #ifndef CREATURE_TYPE_HPP_21UKGANC
 #define CREATURE_TYPE_HPP_21UKGANC
 
+#include <bitset>
+#include <ostream>
+#include <string>
 #include <tuple>
 
-using CreatureType = std::tuple<std::string, int, int, int, std::string, std::string>;
+struct CreatureAttrs {
+   bool isAquatic() const;
+   bool isTerrestrial() const;
+   bool isAnimal() const;
+   bool isPlant() const;
+   bool isHerbivore() const;
+   bool isCarnivore() const;
 
-// Names for the tuple elements to replace obscure code like `std::get<4>(creatureType)
+   operator std::string() const;
+   friend std::ostream& operator<<(std::ostream&, const CreatureAttrs&);
+
+   std::bitset<3> bitset;
+};
+
+// class CreatureType {};
+
+using CreatureType = std::tuple<std::string, int, int, int, CreatureAttrs, std::string>;
+
+// Names for the tuple elements to replace obscure code like `std::get<4>(creatureType)`
 // with `std::get<cTFields::attributes>(creatureType).
 namespace cTFields {
 enum { name, strength, speed, lifetime, attributes, bitmap };

@@ -1,5 +1,6 @@
 local_sources := $(shell find $(subdirectory) -maxdepth 1 -name '*.cpp')
-local_objects := $(addprefix $(OBJDIR)/,$(subst src/,,$(local_sources:.cpp=.o)))
+local_objects := $(addprefix $(OBJDIR)/,$(subst src/,,$(local_sources:.cpp=.o)) \
+   creature_type.o creature_parser.o)
 local_program := $(OBJDIR)/$(subst src,,$(subdirectory))task1
 
 sources  += $(local_sources)
@@ -20,5 +21,8 @@ $(local_program) : local_ldlibs  = $(all_ldlibs) \
 # can't use the `local_` variables in the recipe.
 $(local_program): $(local_objects) $$(libraries) | $$(dir $$@)
 	$(CXX) $(local_ldflags) $^ $(local_ldlibs) -o $@
+
+# $(local_program): $$(filter-out $$(addsuffix .o,$$(programs)),$$(objects)) $(local_program).o $$(libraries) | $$(dir $$@)
+	# $(CXX) $(local_ldflags) $^ $(local_ldlibs) -o $@
 
 # vim: tw=90 ts=8 sts=-1 sw=3 noet

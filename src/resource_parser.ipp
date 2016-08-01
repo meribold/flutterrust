@@ -132,15 +132,6 @@ auto getInt = [](const std::string& s) -> int {
 // http://stackoverflow.com/questions/7663709/convert-string-to-int-c
 // http://en.cppreference.com/w/cpp/string/basic_string/stol
 
-auto getAttrs = [](const std::string& s) -> std::string {
-   static std::string pattern{R"(([A-Za-z0-9_]+( |$))*)"};
-   static auto regEx = boost::make_u32regex(pattern);
-   if (!boost::u32regex_match(s, regEx)) {
-      throw std::string{"regex '" + pattern + "' doesn't match traits '" + s + "'"};
-   }
-   return s;
-};
-
 auto getPath = [](const std::string& s) -> std::string {
    static boost::regex regEx;
 

@@ -157,7 +157,7 @@ void MainFrame::updateAttributes(std::size_t creatureIndex) {
    *propertyEntries[0] << std::get<cTFields::strength>(type);
    *propertyEntries[1] << std::get<cTFields::speed>(type);
    *propertyEntries[2] << std::get<cTFields::lifetime>(type);
-   *propertyEntries[3] << std::get<cTFields::attributes>(type);
+   *propertyEntries[3] << static_cast<std::string>(std::get<cTFields::attributes>(type));
 }
 
 void MainFrame::toggleControlsBox(wxMouseEvent&) {
@@ -389,11 +389,15 @@ void MainFrame::onContextMenuRequested(wxContextMenuEvent& event) {
 void MainFrame::onMenuItemSelected(wxCommandEvent& event) {
    std::int64_t worldX = panelToWorldX(contextMenuPos.x);
    std::int64_t worldY = panelToWorldY(contextMenuPos.y);
-   world.addCreature(event.GetId(), worldX, worldY);
-   // Invalidate the area of the tile we added a creature to.  It will be repainted during
-   // the next event loop iteration.
-   worldPanel->RefreshRect(getTileArea(contextMenuPos.x, contextMenuPos.y), false);
-   // worldPanel->Refresh();
+   if (world.addCreature(event.GetId(), worldX, worldY)) {
+      // Invalidate the area of the tile we added a creature to.  It will be repainted
+      // during the next event loop iteration.
+      worldPanel->RefreshRect(getTileArea(contextMenuPos.x, contextMenuPos.y), false);
+   } else {
+      // TODO: annoy the user with an annoying message window.  Alternatively, overlay a
+      // non-intrusive message that disappears after a few moments.  Or only show eligible
+      // creatures in the context menu.
+   }
    event.Skip();
 }
 

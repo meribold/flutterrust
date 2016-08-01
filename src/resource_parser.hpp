@@ -6,9 +6,9 @@
 #include <tuple>
 #include <vector>
 
-template <typename T, typename Extractors>
-std::vector<T> loadResources(std::istream&&, Extractors,
-                             std::vector<std::string>& errors);
+template <typename Tuple, typename Extractors>
+std::vector<Tuple> loadResources(std::istream&&, Extractors,
+                                 std::vector<std::string>& errors);
 
 #include "resource_parser.ipp"
 

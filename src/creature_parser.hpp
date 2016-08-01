@@ -3,7 +3,6 @@
 
 #include <istream>
 #include <string>
-#include <tuple>
 #include <vector>
 
 #include "creature_type.hpp"
@@ -14,8 +13,6 @@ std::vector<CreatureType> loadCreatureTypes(std::istream&&,
 
 // For those who don't care.
 std::vector<CreatureType> loadCreatureTypes(std::istream&&);
-
-#include "creature_parser.ipp"
 
 #endif  // CREATURE_PARSER_HPP_BCCMAXUG
 
