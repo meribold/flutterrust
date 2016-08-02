@@ -67,7 +67,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       filePath.AppendDir(u8"icons");
       for (const auto& creatureType : Creature::getTypes()) {
          // Construct a wxFileName from a unixy path string like 'wasser/algen.tga'.
-         wxFileName subPath{std::get<cTFields::bitmap>(creatureType), wxPATH_UNIX};
+         wxFileName subPath{creatureType.getBitmapName(), wxPATH_UNIX};
          // Concatenate the paths and create a bitmap.  Both strings implicitly use the
          // platform's native format.
          creatureBitmaps.emplace_back(
@@ -75,7 +75,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
              subPath.GetFullPath());
          // Unrelated to the other code in this loop: set up context menus for placing
          // creatures.
-         creatureChoice->Append(std::get<cTFields::name>(creatureType));
+         creatureChoice->Append(creatureType.getName());
       }
    }
    {
@@ -87,11 +87,11 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
    {
       const auto creatureTypes = Creature::getTypes();
       for (std::size_t i = 0, size = creatureTypes.size(); i < size; ++i) {
-         bool isAquatic = std::get<cTFields::attributes>(creatureTypes[i]).isAquatic();
+         bool isAquatic = creatureTypes[i].isAquatic();
          if (isAquatic) {
-            waterContextMenu->Append(i, std::get<cTFields::name>(creatureTypes[i]));
+            waterContextMenu->Append(i, creatureTypes[i].getName());
          } else {
-            landContextMenu->Append(i, std::get<cTFields::name>(creatureTypes[i]));
+            landContextMenu->Append(i, creatureTypes[i].getName());
          }
       }
    }
@@ -162,10 +162,10 @@ void MainFrame::updateAttributes(std::size_t creatureIndex) {
    for (const auto& textCtrl : propertyEntries) {
       textCtrl->Clear();
    }
-   *propertyEntries[0] << std::get<cTFields::strength>(type);
-   *propertyEntries[1] << std::get<cTFields::speed>(type);
-   *propertyEntries[2] << std::get<cTFields::lifetime>(type);
-   *propertyEntries[3] << static_cast<std::string>(std::get<cTFields::attributes>(type));
+   *propertyEntries[0] << type.getStrength();
+   *propertyEntries[1] << type.getSpeed();
+   *propertyEntries[2] << type.getLifetime();
+   *propertyEntries[3] << type.getAttributeString();
 }
 
 void MainFrame::toggleControlsBox(wxMouseEvent&) {
@@ -241,7 +241,6 @@ void MainFrame::onPaint(wxPaintEvent&) {
          for (auto it = range.first; it != range.second; ++it) {
             // const auto& pos = it->first;
             const auto& creature = it->second;
-            // std::cout << std::get<cTFields::bitmap>(creature.type) << '\n';
             dC.DrawBitmap(creatureBitmaps[creature.getTypeIndex()], drawOffsetX,
                           drawOffsetY);
          }

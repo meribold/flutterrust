@@ -36,16 +36,6 @@ class World {
 
    bool addCreature(std::size_t creatureType, std::int64_t x, std::int64_t y);
 
-   const CreatureType& getCreatureType(const Creature&) const;
-   const CreatureAttrs& getCreatureAttrs(const Creature&) const;
-
-   bool isAquatic(const Creature&) const;
-   bool isTerrestrial(const Creature&) const;
-   bool isPlant(const Creature&) const;
-   bool isAnimal(const Creature&) const;
-   bool isHerbivore(const Creature&) const;
-   bool isCarnivore(const Creature&) const;
-
   private:
    struct PosHash {
       std::size_t operator()(Pos const& pos) const;

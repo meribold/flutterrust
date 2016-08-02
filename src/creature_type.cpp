@@ -1,27 +1,13 @@
 #include "creature_type.hpp"
 
-namespace {
-const std::string aquatic = u8"Wasserbewohner";
-const std::string terrestrial = u8"Landbewohner";
-const std::string plant = u8"Pflanze";
-const std::string animal = u8"Tier";
-const std::string herbivore = u8"Pflanzenfresser";
-const std::string carnivore = u8"Fleischfresser";
-}
-
-bool CreatureAttrs::isAquatic() const { return !bitset.test(0); }
-
-bool CreatureAttrs::isTerrestrial() const { return bitset.test(0); }
-
-bool CreatureAttrs::isPlant() const { return !bitset.test(1); }
-
-bool CreatureAttrs::isAnimal() const { return bitset.test(1); }
-
-bool CreatureAttrs::isHerbivore() const { return !bitset.test(2); }
-
-bool CreatureAttrs::isCarnivore() const { return bitset.test(2); }
-
 CreatureAttrs::operator std::string() const {
+   static const std::string aquatic = u8"Wasserbewohner";
+   static const std::string terrestrial = u8"Landbewohner";
+   static const std::string plant = u8"Pflanze";
+   static const std::string animal = u8"Tier";
+   static const std::string herbivore = u8"Pflanzenfresser";
+   static const std::string carnivore = u8"Fleischfresser";
+
    std::string s;
    s += isTerrestrial() ? terrestrial : aquatic;
    s += ' ';

@@ -105,16 +105,17 @@ TileType World::getTileType(std::int64_t x, std::int64_t y) const {
 
 bool World::addCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y) {
    // When trying to place a creature on a tile of hostile type (e.g. a fish on land),
-   // don't do anything and return false.
+   // don't do anything and return false.  FIXME: just assert we don't try to do that, the
+   // UI shouldn't allow it anymore.
    const TileType tileType = getTileType(x, y);
    const CreatureType& creatureType = Creature::getTypes()[typeIndex];
-   bool aquatic = std::get<cTFields::attributes>(creatureType).isAquatic();
+   bool aquatic = creatureType.isAquatic();
    if (tileType == TileType::deepWater || tileType == TileType::water) {
       if (!aquatic) return false;
    } else {
       if (aquatic) return false;
    }
-   int lifetime = std::get<cTFields::lifetime>(creatureType);
+   int lifetime = creatureType.getLifetime();
    creatures.emplace(Pos{x, y}, Creature{typeIndex, lifetime});
    return true;
 }

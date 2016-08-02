@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
    std::cout << argv[0] << ": imported creature types:" << std::endl;
    for (const auto& creatureType : creatureTypes) {
       std::cout << "  ";
-      printTuple(creatureType);
+      printTuple(creatureType.tuple);
       std::cout << std::endl;
    }
 }

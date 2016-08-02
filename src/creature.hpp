@@ -1,6 +1,7 @@
 #ifndef CREATURE_HPP_XZNFGDOY
 #define CREATURE_HPP_XZNFGDOY
 
+#include <cassert>  // assert
 #include <string>
 #include <vector>
 
@@ -11,20 +12,20 @@ class World;
 class Creature {
   public:
    static void loadTypes(std::string filePath);
-   static const std::vector<CreatureType>& getTypes();
+   inline static const std::vector<CreatureType>& getTypes();
 
-   Creature(std::size_t typeIndex, int lifetime);
+   inline Creature(std::size_t typeIndex, int lifetime);
 
-   std::size_t getTypeIndex() const;
-   const CreatureType& getCreatureType() const;
-   const CreatureAttrs& getCreatureAttrs() const;
+   inline std::size_t getTypeIndex() const;
+   inline const CreatureType& getType() const;
+   inline std::string getAttributeString() const;
 
-   bool isAquatic() const;
-   bool isTerrestrial() const;
-   bool isPlant() const;
-   bool isAnimal() const;
-   bool isHerbivore() const;
-   bool isCarnivore() const;
+   inline bool isAquatic() const;
+   inline bool isTerrestrial() const;
+   inline bool isPlant() const;
+   inline bool isAnimal() const;
+   inline bool isHerbivore() const;
+   inline bool isCarnivore() const;
 
   private:
    static std::vector<CreatureType> creatureTypes;
@@ -32,6 +33,28 @@ class Creature {
    const std::size_t typeIndex;
    int lifetime;
 };
+
+const std::vector<CreatureType>& Creature::getTypes() { return creatureTypes; }
+
+Creature::Creature(std::size_t typeIndex, int lifetime)
+    : typeIndex{typeIndex}, lifetime{lifetime} {}
+
+std::size_t Creature::getTypeIndex() const { return typeIndex; }
+const CreatureType& Creature::getType() const { return creatureTypes[getTypeIndex()]; }
+std::string Creature::getAttributeString() const {
+   return getType().getAttributeString();
+}
+
+bool Creature::isAquatic() const { return getType().isAquatic(); }
+bool Creature::isTerrestrial() const { return getType().isTerrestrial(); }
+bool Creature::isPlant() const { return getType().isPlant(); }
+bool Creature::isAnimal() const { return getType().isAnimal(); }
+bool Creature::isHerbivore() const { return getType().isHerbivore(); }
+bool Creature::isCarnivore() const {
+   // Assert it's an animal; plants aren't partitioned into herbivores and carnivores.
+   assert(isAnimal());
+   return getType().isCarnivore();
+}
 
 #endif  // CREATURE_HPP_XZNFGDOY
 

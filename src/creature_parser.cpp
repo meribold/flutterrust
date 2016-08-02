@@ -88,9 +88,10 @@ namespace {
 auto extractors = std::make_tuple(getName, getInt, getInt, getInt, getAttrs, getPath);
 }
 
-std::vector<CreatureType> loadCreatureTypes(std::istream&& iStream,
+std::vector<CreatureType> loadCreatureTypes(std::istream&& iS,
                                             std::vector<std::string>& errors) {
-   return loadResources<CreatureType>(std::move(iStream), extractors, errors);
+   auto tuples = loadResources<CreatureType::Tuple>(std::move(iS), extractors, errors);
+   return *reinterpret_cast<std::vector<CreatureType>*>(&tuples);  // Don't judge me!
 }
 
 // vim: tw=90 sts=-1 sw=3 et
