@@ -18,7 +18,13 @@ class Creature {
 
    inline std::size_t getTypeIndex() const;
    inline const CreatureType& getType() const;
+
+   inline const std::string& getName() const;
+   inline int getStrength() const;
+   inline int getSpeed() const;
+   inline int getLifetime() const;
    inline std::string getAttributeString() const;
+   inline const std::string& getBitmapName() const;
 
    inline bool isAquatic() const;
    inline bool isTerrestrial() const;
@@ -41,9 +47,15 @@ Creature::Creature(std::size_t typeIndex, int lifetime)
 
 std::size_t Creature::getTypeIndex() const { return typeIndex; }
 const CreatureType& Creature::getType() const { return creatureTypes[getTypeIndex()]; }
+
+const std::string& Creature::getName() const { return getType().getName(); }
+int Creature::getStrength() const { return getType().getStrength(); }
+int Creature::getSpeed() const { return getType().getSpeed(); }
+int Creature::getLifetime() const { return getType().getLifetime(); }
 std::string Creature::getAttributeString() const {
    return getType().getAttributeString();
 }
+const std::string& Creature::getBitmapName() const { return getType().getBitmapName(); }
 
 bool Creature::isAquatic() const { return getType().isAquatic(); }
 bool Creature::isTerrestrial() const { return getType().isTerrestrial(); }
