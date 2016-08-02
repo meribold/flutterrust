@@ -72,9 +72,10 @@ class MainFrame : public wxFrame {
    wxButton* placeCreatureButton;
    wxButton* playPauseButton;
    wxButton* stepButton;
-   // FIXME: this is probably not deleted automatically
+   // FIXME: These are probably not deleted automatically
    // (http://docs.wxwidgets.org/trunk/classwx_menu.html)
-   wxMenu* contextMenu;
+   wxMenu* waterContextMenu;
+   wxMenu* landContextMenu;
 
    std::array<wxBitmap, 6> terrainBitmaps;
    std::vector<wxBitmap> creatureBitmaps;

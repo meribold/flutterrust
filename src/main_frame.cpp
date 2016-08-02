@@ -43,7 +43,8 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       placeCreatureButton{new wxButton{controlsBox, wxID_ANY, u8"Place"}},
       playPauseButton{new wxButton{controlsBox, wxID_ANY, u8"Unpause"}},
       stepButton{new wxButton{controlsBox, wxID_ANY, u8"Step"}},
-      contextMenu{new wxMenu{u8"Add creature"}},
+      waterContextMenu{new wxMenu{}},
+      landContextMenu{new wxMenu{}},
       world{} {
    {
       const std::array<std::string, 6> fileNames{
@@ -72,7 +73,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
          creatureBitmaps.emplace_back(
              filePath.GetPath(wxPATH_GET_VOLUME | wxPATH_GET_SEPARATOR) +
              subPath.GetFullPath());
-         // Unrelated to the other code in this loop: set up the context menu for placing
+         // Unrelated to the other code in this loop: set up context menus for placing
          // creatures.
          creatureChoice->Append(std::get<cTFields::name>(creatureType));
       }
@@ -83,9 +84,16 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       menuBar->Append(fileMenu, "&File");
       SetMenuBar(menuBar);
    }
-   for (std::size_t i = 0, size = Creature::getTypes().size(); i < size; ++i) {
-      const auto& type = Creature::getTypes()[i];
-      contextMenu->Append(i, std::get<cTFields::name>(type));
+   {
+      const auto creatureTypes = Creature::getTypes();
+      for (std::size_t i = 0, size = creatureTypes.size(); i < size; ++i) {
+         bool isAquatic = std::get<cTFields::attributes>(creatureTypes[i]).isAquatic();
+         if (isAquatic) {
+            waterContextMenu->Append(i, std::get<cTFields::name>(creatureTypes[i]));
+         } else {
+            landContextMenu->Append(i, std::get<cTFields::name>(creatureTypes[i]));
+         }
+      }
    }
 
    // Change the background style to allow using an EVT_PAINT handler.
@@ -381,7 +389,14 @@ wxRect MainFrame::getTileArea(int x, int y) {
 // Process a wxEVT_CONTEXT_MENU inside the worldPanel.
 void MainFrame::onContextMenuRequested(wxContextMenuEvent& event) {
    contextMenuPos = worldPanel->ScreenToClient(event.GetPosition());
-   worldPanel->PopupMenu(contextMenu);
+   std::int64_t worldX = panelToWorldX(contextMenuPos.x);
+   std::int64_t worldY = panelToWorldY(contextMenuPos.y);
+   const TileType tileType = world.getTileType(worldX, worldY);
+   if (tileType == TileType::deepWater || tileType == TileType::water) {
+      worldPanel->PopupMenu(waterContextMenu);
+   } else {
+      worldPanel->PopupMenu(landContextMenu);
+   }
    event.Skip();
 }
 
@@ -389,15 +404,11 @@ void MainFrame::onContextMenuRequested(wxContextMenuEvent& event) {
 void MainFrame::onMenuItemSelected(wxCommandEvent& event) {
    std::int64_t worldX = panelToWorldX(contextMenuPos.x);
    std::int64_t worldY = panelToWorldY(contextMenuPos.y);
-   if (world.addCreature(event.GetId(), worldX, worldY)) {
-      // Invalidate the area of the tile we added a creature to.  It will be repainted
-      // during the next event loop iteration.
-      worldPanel->RefreshRect(getTileArea(contextMenuPos.x, contextMenuPos.y), false);
-   } else {
-      // TODO: annoy the user with an annoying message window.  Alternatively, overlay a
-      // non-intrusive message that disappears after a few moments.  Or only show eligible
-      // creatures in the context menu.
-   }
+   bool success = world.addCreature(event.GetId(), worldX, worldY);
+   assert(success);
+   // Invalidate the area of the tile we added a creature to.  It will be repainted during
+   // the next event loop iteration.
+   worldPanel->RefreshRect(getTileArea(contextMenuPos.x, contextMenuPos.y), false);
    event.Skip();
 }
 
