@@ -1,27 +1,12 @@
-#include <cassert>    // assert
-#include <climits>    // CHAR_BIT
-#include <cmath>      // pow, lround
-#include <cstdint>    // int64_t
-#include <cstdlib>    // abs
-#include <fstream>    // ifstream
-#include <stdexcept>  // runtime_error
-#include <vector>
+#include <cassert>  // assert
+#include <climits>  // CHAR_BIT
+#include <cmath>    // pow, lround
+#include <cstdint>  // int64_t
+#include <cstdlib>  // abs
 
-#include "creature_parser.hpp"
 #include "world.hpp"
 
-World::World(std::string filePath) : creatureTypes{} {
-   std::ifstream iStream{filePath};
-
-   if (!iStream.is_open()) {
-      throw std::runtime_error{u8"couldn't open file " + filePath};
-   }
-
-   iStream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-   std::vector<std::string> errors;
-   creatureTypes = loadCreatureTypes(std::move(iStream), errors);
-}
+World::World() {}
 
 void World::step() {
    // ...
@@ -122,48 +107,15 @@ bool World::addCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y) {
    // When trying to place a creature on a tile of hostile type (e.g. a fish on land),
    // don't do anything and return false.
    const TileType tileType = getTileType(x, y);
-   bool aquatic = std::get<cTFields::attributes>(creatureTypes[typeIndex]).isAquatic();
+   const CreatureType creatureType = Creature::getTypes()[typeIndex];
+   bool aquatic = std::get<cTFields::attributes>(creatureType).isAquatic();
    if (tileType == TileType::deepWater || tileType == TileType::water) {
       if (!aquatic) return false;
    } else {
       if (aquatic) return false;
    }
-   creatures.emplace(Pos{x, y}, typeIndex);
+   creatures.emplace(Pos{x, y}, Creature{typeIndex, 42});
    return true;
-}
-
-const CreatureType& World::getCreatureType(const Creature& creature) const {
-   return creatureTypes[creature.getTypeIndex()];
-}
-
-const CreatureAttrs& World::getCreatureAttrs(const Creature& creature) const {
-   return std::get<cTFields::attributes>(getCreatureType(creature));
-}
-
-bool World::isAquatic(const Creature& creature) const {
-   return getCreatureAttrs(creature).isAquatic();
-}
-
-bool World::isTerrestrial(const Creature& creature) const {
-   return getCreatureAttrs(creature).isTerrestrial();
-}
-
-bool World::isPlant(const Creature& creature) const {
-   return getCreatureAttrs(creature).isPlant();
-}
-
-bool World::isAnimal(const Creature& creature) const {
-   return getCreatureAttrs(creature).isAnimal();
-}
-
-bool World::isHerbivore(const Creature& creature) const {
-   return getCreatureAttrs(creature).isHerbivore();
-}
-
-bool World::isCarnivore(const Creature& creature) const {
-   // Assert it's an animal; plants aren't partitioned into herbivores and carnivores.
-   assert(isAnimal(creature));
-   return getCreatureAttrs(creature).isCarnivore();
 }
 
 decltype(World::creatures)::const_iterator World::getCreatures(std::int64_t x,

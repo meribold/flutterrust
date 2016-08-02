@@ -6,6 +6,7 @@
 #include <wx/msgdlg.h>    // wxMessageDialog
 #include <wx/stdpaths.h>  // For getting the directory of the executable.
 
+#include "creature.hpp"
 #include "main_frame.hpp"
 
 class App : public wxApp {
@@ -22,9 +23,12 @@ bool App::OnInit() {
    SetAppName(u8"flutterrust");
    SetAppDisplayName(u8"flutterrust");
 
-   wxFileName exeName{wxStandardPaths::Get().GetExecutablePath()};
+   const wxFileName exeFileName{wxStandardPaths::Get().GetExecutablePath()};
+   const std::string exePath = exeFileName.GetPath().ToStdString();
    try {
-      mainFrame = new MainFrame{exeName.GetPath().ToStdString()};
+      Creature::loadTypes(exePath + static_cast<char>(wxFileName::GetPathSeparator()) +
+                          u8"CreatureTable.txt");
+      mainFrame = new MainFrame{exePath};
    } catch (const std::exception& e) {
       wxMessageDialog dialog{nullptr, u8"Exception caught.  Terminating.\n",
                              u8"Fatal error", wxICON_ERROR | wxOK};

@@ -1,13 +1,11 @@
 #ifndef WORLD_HPP_L42R9DKX
 #define WORLD_HPP_L42R9DKX
 
-#include <array>
-#include <cstddef>  // size_t
-#include <cstdint>  // int64_t
-#include <limits>   // numeric_limits
-#include <string>
+#include <array>          // array
+#include <cstddef>        // size_t
+#include <cstdint>        // int64_t
+#include <limits>         // numeric_limits
 #include <unordered_map>  // unordered_multimap
-#include <vector>
 
 #include "creature.hpp"
 #include "creature_type.hpp"
@@ -18,9 +16,7 @@ class World {
   public:
    using Pos = std::array<std::int64_t, 2>;
 
-   World(std::string filePath);
-
-   std::vector<CreatureType> creatureTypes;
+   World();
 
    void step();
 

@@ -10,6 +10,7 @@
 #include <wx/filename.h>  // wxFileName
 #include <wx/statline.h>  // wxStaticLine
 
+#include "creature.hpp"
 #include "tuple_helpers.hpp"  // toUT
 
 #include <cassert>  // assert
@@ -43,8 +44,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       playPauseButton{new wxButton{controlsBox, wxID_ANY, u8"Unpause"}},
       stepButton{new wxButton{controlsBox, wxID_ANY, u8"Step"}},
       contextMenu{new wxMenu{u8"Add creature"}},
-      world{dataDir + static_cast<char>(wxFileName::GetPathSeparator()) +
-            u8"CreatureTable.txt"} {
+      world{} {
    {
       const std::array<std::string, 6> fileNames{
           u8"deep_sea", u8"shallow_water", u8"sand", u8"earth", u8"rocks", u8"snow"};
@@ -58,13 +58,13 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
    }
    // ...
    {
-      creatureBitmaps.reserve(world.creatureTypes.size());
+      creatureBitmaps.reserve(Creature::getTypes().size());
       // Construct a directory path.  The second argument would be the file name and only
       // makes sure the constructor that will consider dataDir to be a directory is
       // chosen.
       wxFileName filePath{dataDir, "", wxPATH_NATIVE};
       filePath.AppendDir(u8"icons");
-      for (const auto& creatureType : world.creatureTypes) {
+      for (const auto& creatureType : Creature::getTypes()) {
          // Construct a wxFileName from a unixy path string like 'wasser/algen.tga'.
          wxFileName subPath{std::get<cTFields::bitmap>(creatureType), wxPATH_UNIX};
          // Concatenate the paths and create a bitmap.  Both strings implicitly use the
@@ -83,8 +83,8 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       menuBar->Append(fileMenu, "&File");
       SetMenuBar(menuBar);
    }
-   for (std::size_t i = 0; i < world.creatureTypes.size(); ++i) {
-      const auto& type = world.creatureTypes[i];
+   for (std::size_t i = 0, size = Creature::getTypes().size(); i < size; ++i) {
+      const auto& type = Creature::getTypes()[i];
       contextMenu->Append(i, std::get<cTFields::name>(type));
    }
 
@@ -150,7 +150,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
 }
 
 void MainFrame::updateAttributes(std::size_t creatureIndex) {
-   const auto& type = world.creatureTypes[creatureIndex];
+   const auto& type = Creature::getTypes()[creatureIndex];
    for (const auto& textCtrl : propertyEntries) {
       textCtrl->Clear();
    }
