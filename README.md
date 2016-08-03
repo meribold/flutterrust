@@ -4,7 +4,7 @@ Just a university assignment.
 
 ## Building
 
-You need GNU Make, GCC (`g++`), Boost, ICU, and wxWidgets.
+You need GNU Make, GCC (`g++`), Boost, [ICU](http://site.icu-project.org), and wxWidgets.
 
 For a release build, run
 
