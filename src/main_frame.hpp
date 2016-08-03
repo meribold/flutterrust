@@ -70,10 +70,6 @@ class MainFrame : public wxFrame {
    wxChoice* creatureChoice;
    std::array<wxStaticText*, 4> propertyLabels;
    std::array<wxTextCtrl*, 4> propertyEntries;
-   // wxListBox* attributeBox;
-   // wxButton* placeCreatureButton;
-   // wxButton* playPauseButton;
-   // wxButton* stepButton;
    // FIXME: These are probably not deleted automatically
    // (http://docs.wxwidgets.org/trunk/classwx_menu.html)
    wxMenu* waterContextMenu;

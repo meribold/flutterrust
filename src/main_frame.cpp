@@ -43,10 +43,6 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
                        new wxTextCtrl{controlsBox, wxID_ANY, wxEmptyString,
                                       wxDefaultPosition, wxDefaultSize,
                                       wxTE_READONLY | wxTE_MULTILINE | wxTE_NO_VSCROLL}}},
-      // attributeBox{new wxListBox{controlsBox, wxID_ANY}},
-      // placeCreatureButton{new wxButton{controlsBox, wxID_ANY, u8"Place"}},
-      // playPauseButton{new wxButton{controlsBox, wxID_ANY, u8"Unpause"}},
-      // stepButton{new wxButton{controlsBox, wxID_ANY, u8"Step"}},
       waterContextMenu{new wxMenu{}},
       landContextMenu{new wxMenu{}},
       world{} {
@@ -137,24 +133,6 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       minSize.SetWidth(std::max(minSize.GetWidth(), 110));
       propertyEntries[3]->SetMinClientSize(minSize);
    }
-   // controlsSizer->Add(attributeBox, 0, wxEXPAND);
-   // controlsSizer->AddSpacer(8);
-   // controlsSizer->Add(placeCreatureButton, 0, wxEXPAND);
-   /*
-   controlsSizer->Add(new wxStaticLine{controlsBox, wxID_ANY, wxDefaultPosition,
-                                       wxSize{wxDefaultCoord, 12}},
-                      0, wxEXPAND);
-   */
-   /*
-   {
-      auto hBoxSizer = new wxBoxSizer{wxHORIZONTAL};
-      hBoxSizer->Add(playPauseButton, 1);
-      hBoxSizer->Add(stepButton, 1);
-      controlsSizer->Add(hBoxSizer, 0, wxEXPAND);
-   }
-   */
-   // controlsSizer->Add(playPauseButton, 0, wxEXPAND);
-   // controlsSizer->Add(stepButton, 0, wxEXPAND);
    worldPanelSizer->AddStretchSpacer();
    worldPanelSizer->Add(controlsSizer, 0, wxTOP | wxRIGHT, 4);
    worldPanel->SetSizer(worldPanelSizer);
@@ -186,9 +164,6 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
    controlsBox->Bind(wxEVT_LEFT_DCLICK, &MainFrame::toggleControlsBox, this);
 
    creatureChoice->Bind(wxEVT_CHOICE, &MainFrame::onCreatureChoice, this);
-   // placeCreatureButton->Bind(wxEVT_BUTTON, &MainFrame::onPlace, this);
-   // playPauseButton->Bind(wxEVT_BUTTON, &MainFrame::onPlayPause, this);
-   // stepButton->Bind(wxEVT_BUTTON, &MainFrame::onStep, this);
 
    worldPanel->Bind(wxEVT_LEFT_DOWN, &MainFrame::onLeftDown, this);
    worldPanel->Bind(wxEVT_MOUSE_CAPTURE_LOST, &MainFrame::onCaptureLost, this);
@@ -210,45 +185,16 @@ void MainFrame::updateAttributes(std::size_t creatureIndex) {
    *propertyEntries[0] << type.getStrength();
    *propertyEntries[1] << type.getSpeed();
    *propertyEntries[2] << type.getLifetime();
-   /*
-   propertyEntries[3]->Clear();
-   propertyEntries[3]->InvalidateBestSize();
-   */
    std::string attributes = type.getAttributeString();
    std::replace(attributes.begin(), attributes.end(), ' ', '\n');
    *propertyEntries[3] << attributes;
 
-   // propertyEntries[3]->SetMargins(propertyEntries[2]->GetMargins());
-   // propertyEntries[3]->Fit();
-   // propertyEntries[3]->SetMinClientSize(wxSize{0, 0});
-   // controlsBox->InvalidateBestSize();
-   // propertyEntries[3]->InvalidateBestSize();
-   // int width = propertyEntries[3]->GetBestWidth(0);
-   // int width = propertyEntries[3]->GetSize().GetWidth();
-   // int width = propertyEntries[3]->GetBestVirtualSize().GetWidth();
    int width = propertyEntries[3]->GetMinClientSize().GetWidth();
-   // std::cerr << width << '\n';
    propertyEntries[3]->SetMinClientSize(wxSize{width, 0});
    propertyEntries[3]->SetClientSize(width, 0);
    propertyEntries[3]->SetMinClientSize(propertyEntries[3]->GetBestVirtualSize());
 
-   /*
-   attributeBox->Clear();
-   std::stringstream sStream{type.getAttributeString()};
-   std::string attribute;
-   while (sStream >> attribute) {
-      attributeBox->Append(attribute);
-      // attributeBox->Append(attribute);
-      // attributeBox->Append(attribute);
-   }
-   attributeBox->SetMinClientSize(attributeBox->GetVirtualSize());
-   // attributeBox->SetMinClientSize(
-   //     wxSize{attributeBox->GetMinWidth(), 33 + attributeBox->GetMaxHeight()});
-   // attributeBox->Fit();
-   */
-
    worldPanelSizer->Layout();
-   // controlsSizer->Layout();
 }
 
 void MainFrame::toggleControlsBox(wxMouseEvent&) {
@@ -338,12 +284,6 @@ void MainFrame::onPaint(wxPaintEvent&) {
 void MainFrame::onCreatureChoice(wxCommandEvent& event) {
    auto index = event.GetInt();
    updateAttributes(index);
-}
-
-void MainFrame::onPlace(wxCommandEvent&) {
-#ifdef DEBUG
-   std::cerr << "Place\n";
-#endif
 }
 
 void MainFrame::onPlayPause(wxCommandEvent&) {
