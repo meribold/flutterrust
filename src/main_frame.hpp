@@ -68,8 +68,9 @@ class MainFrame : public wxFrame {
    wxStaticBoxSizer* controlsSizer;
    wxStaticBox* controlsBox;
    wxChoice* creatureChoice;
-   std::array<wxStaticText*, 4> propertyLabels;
-   std::array<wxTextCtrl*, 4> propertyEntries;
+   std::array<wxStaticText*, 3> propertyLabels;
+   std::array<wxTextCtrl*, 3> propertyEntries;
+   wxTextCtrl* attributeEntry;
    // FIXME: These are probably not deleted automatically
    // (http://docs.wxwidgets.org/trunk/classwx_menu.html)
    wxMenu* waterContextMenu;

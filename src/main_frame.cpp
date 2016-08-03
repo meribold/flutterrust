@@ -32,17 +32,16 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       creatureChoice{new wxChoice{controlsBox, wxID_ANY}},
       propertyLabels{{new wxStaticText{controlsBox, wxID_ANY, u8"Strength"},
                       new wxStaticText{controlsBox, wxID_ANY, u8"Speed"},
-                      new wxStaticText{controlsBox, wxID_ANY, u8"Lifetime"},
-                      new wxStaticText{controlsBox, wxID_ANY, u8"Attributes"}}},
+                      new wxStaticText{controlsBox, wxID_ANY, u8"Lifetime"}}},
       propertyEntries{{new wxTextCtrl{controlsBox, wxID_ANY, wxEmptyString,
                                       wxDefaultPosition, wxDefaultSize, wxTE_READONLY},
                        new wxTextCtrl{controlsBox, wxID_ANY, wxEmptyString,
                                       wxDefaultPosition, wxDefaultSize, wxTE_READONLY},
                        new wxTextCtrl{controlsBox, wxID_ANY, wxEmptyString,
-                                      wxDefaultPosition, wxDefaultSize, wxTE_READONLY},
-                       new wxTextCtrl{controlsBox, wxID_ANY, wxEmptyString,
-                                      wxDefaultPosition, wxDefaultSize,
-                                      wxTE_READONLY | wxTE_MULTILINE | wxTE_NO_VSCROLL}}},
+                                      wxDefaultPosition, wxDefaultSize, wxTE_READONLY}}},
+      attributeEntry{new wxTextCtrl{controlsBox, wxID_ANY, wxEmptyString,
+                                    wxDefaultPosition, wxDefaultSize,
+                                    wxTE_READONLY | wxTE_MULTILINE | wxTE_NO_VSCROLL}},
       waterContextMenu{new wxMenu{}},
       landContextMenu{new wxMenu{}},
       world{} {
@@ -114,10 +113,10 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
    topSizer->Add(worldPanel, 1, wxEXPAND);
    controlsSizer->Add(creatureChoice, 0, wxEXPAND);
    controlsSizer->Add(new wxStaticLine{controlsBox, wxID_ANY, wxDefaultPosition,
-                                       wxSize{wxDefaultCoord, 12}},
+                                       wxSize{wxDefaultCoord, 10}},
                       0, wxEXPAND);
    assert(propertyEntries.size() == propertyLabels.size());
-   for (std::size_t i = 0; i < propertyLabels.size() - 1; ++i) {
+   for (std::size_t i = 0; i < propertyLabels.size(); ++i) {
       propertyEntries[i]->SetMinClientSize(wxSize{50, -1});
       auto hBoxSizer = new wxBoxSizer{wxHORIZONTAL};
       hBoxSizer->Add(propertyLabels[i], 0, wxALIGN_CENTER_VERTICAL);
@@ -125,13 +124,12 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       hBoxSizer->Add(propertyEntries[i], 0, wxEXPAND);
       controlsSizer->Add(hBoxSizer, 0, wxEXPAND);
    }
-   controlsSizer->AddSpacer(4);  // FIXME: not hidden when the controlsBox is minimized.
-   controlsSizer->Add(propertyLabels[3], 0, wxALIGN_CENTER_HORIZONTAL);
-   controlsSizer->Add(propertyEntries[3], 0, wxEXPAND);
+   controlsSizer->AddSpacer(2);  // FIXME: not hidden when the controlsBox is minimized.
+   controlsSizer->Add(attributeEntry, 0, wxEXPAND);
    {
-      wxSize minSize = propertyEntries[3]->GetMinClientSize();
+      wxSize minSize = attributeEntry->GetMinClientSize();
       minSize.SetWidth(std::max(minSize.GetWidth(), 110));
-      propertyEntries[3]->SetMinClientSize(minSize);
+      attributeEntry->SetMinClientSize(minSize);
    }
    worldPanelSizer->AddStretchSpacer();
    worldPanelSizer->Add(controlsSizer, 0, wxTOP | wxRIGHT, 4);
@@ -187,12 +185,13 @@ void MainFrame::updateAttributes(std::size_t creatureIndex) {
    *propertyEntries[2] << type.getLifetime();
    std::string attributes = type.getAttributeString();
    std::replace(attributes.begin(), attributes.end(), ' ', '\n');
-   *propertyEntries[3] << attributes;
+   attributeEntry->Clear();
+   *attributeEntry << attributes;
 
-   int width = propertyEntries[3]->GetMinClientSize().GetWidth();
-   propertyEntries[3]->SetMinClientSize(wxSize{width, 0});
-   propertyEntries[3]->SetClientSize(width, 0);
-   propertyEntries[3]->SetMinClientSize(propertyEntries[3]->GetBestVirtualSize());
+   int width = attributeEntry->GetMinClientSize().GetWidth();
+   attributeEntry->SetMinClientSize(wxSize{width, 0});
+   attributeEntry->SetClientSize(width, 0);
+   attributeEntry->SetMinClientSize(attributeEntry->GetBestVirtualSize());
 
    worldPanelSizer->Layout();
 }
