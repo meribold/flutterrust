@@ -107,7 +107,6 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
    // Change the background style to allow using an EVT_PAINT handler.
    // [1]: http://docs.wxwidgets.org/trunk/classwx_window.html#af14f8fd2ed2d30a9bbb5d4f9fd
    worldPanel->SetBackgroundStyle(wxBG_STYLE_PAINT);
-   worldPanel->SetOwnBackgroundColour(wxColour{0x00, 0x00, 0x80});
    controlsBox->SetOwnForegroundColour(wxColour{0xff, 0xff, 0xff});
    controlsBox->Hide();
    topSizer->Add(worldPanel, 1, wxEXPAND);
@@ -122,10 +121,9 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       hBoxSizer->Add(propertyLabels[i], 0, wxALIGN_CENTER_VERTICAL);
       hBoxSizer->AddStretchSpacer(1);
       hBoxSizer->Add(propertyEntries[i], 0, wxEXPAND);
-      controlsSizer->Add(hBoxSizer, 0, wxEXPAND);
+      controlsSizer->Add(hBoxSizer, 0, wxEXPAND | wxALL, 2);
    }
-   controlsSizer->AddSpacer(2);  // FIXME: not hidden when the controlsBox is minimized.
-   controlsSizer->Add(attributeEntry, 0, wxEXPAND);
+   controlsSizer->Add(attributeEntry, 0, wxEXPAND | wxALL, 2);
    {
       wxSize minSize = attributeEntry->GetMinClientSize();
       minSize.SetWidth(std::max(minSize.GetWidth(), 110));
