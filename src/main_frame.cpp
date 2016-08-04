@@ -126,7 +126,9 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
    controlsSizer->Add(attributeEntry, 0, wxEXPAND | wxALL, 2);
    {
       wxSize minSize = attributeEntry->GetMinClientSize();
-      minSize.SetWidth(std::max(minSize.GetWidth(), 110));
+      // FIXME: the text entry's minimum width should be automatically adjusted based on
+      // its contents to prevent line wrapping.
+      minSize.SetWidth(std::max(minSize.GetWidth(), 130));
       attributeEntry->SetMinClientSize(minSize);
    }
    worldPanelSizer->AddStretchSpacer();
