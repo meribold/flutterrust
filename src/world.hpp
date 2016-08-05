@@ -34,8 +34,11 @@ class World {
    // is performed.  To access coordinates outside of the cached terrain, assertCached has
    // to be called first.
    TileType getTileType(std::int64_t x, std::int64_t y) const;
-   bool isWater(std::int64_t x, std::int64_t y) const;
-   bool isLand(std::int64_t x, std::int64_t y) const;
+   inline TileType getTileType(Pos) const;
+   inline bool isWater(std::int64_t x, std::int64_t y) const;
+   inline bool isWater(Pos) const;
+   inline bool isLand(std::int64_t x, std::int64_t y) const;
+   inline bool isLand(Pos) const;
 
    bool addCreature(std::size_t creatureType, std::int64_t x, std::int64_t y);
 
@@ -57,8 +60,6 @@ class World {
    // TODO getCreatureIterator()();
    decltype(creatures)::const_iterator getCreatures(std::int64_t x, std::int64_t y);
 
-   void testHash() const;
-
   private:
    MapGenerator mapGen;
    static constexpr std::int64_t terrainBlockSize = MapGenerator::blockSize;
@@ -73,6 +74,20 @@ class World {
    std::int64_t top = std::numeric_limits<std::int64_t>::lowest();
    std::int64_t left = std::numeric_limits<std::int64_t>::lowest();
 };
+
+TileType World::getTileType(World::Pos pos) const { return getTileType(pos[0], pos[1]); }
+
+bool World::isWater(std::int64_t x, std::int64_t y) const {
+   return toUT(getTileType(x, y)) <= 1;
+}
+
+bool World::isWater(World::Pos pos) const { return isWater(pos[0], pos[1]); }
+
+bool World::isLand(std::int64_t x, std::int64_t y) const {
+   return toUT(getTileType(x, y)) >= 2;
+}
+
+bool World::isLand(World::Pos pos) const { return isLand(pos[0], pos[1]); }
 
 #endif  // WORLD_HPP_L42R9DKX
 

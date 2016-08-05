@@ -110,14 +110,6 @@ TileType World::getTileType(std::int64_t x, std::int64_t y) const {
    return terrainBlocks[blockIndex][i][j];
 }
 
-bool World::isWater(std::int64_t x, std::int64_t y) const {
-   return toUT(getTileType(x, y)) <= 1;
-}
-
-bool World::isLand(std::int64_t x, std::int64_t y) const {
-   return toUT(getTileType(x, y)) >= 2;
-}
-
 bool World::addCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y) {
    // When trying to place a creature on a tile of hostile type (e.g. a fish on land),
    // don't do anything and return false.  FIXME: just assert we don't try to do that, the
@@ -139,7 +131,7 @@ int World::getMovementCost(const World::Pos& pos, bool terrestrial) const {
    // Movement costs for aquatic and terrestrial animals.
    static constexpr std::array<int, toUT(TileType::SIZE)> movementCosts[2]{
        {3, 1, -1, -1, -1, -1}, {-1, -1, 1, 1, 4, 2}};
-   return movementCosts[terrestrial][toUT(getTileType(pos[0], pos[1]))];
+   return movementCosts[terrestrial][toUT(getTileType(pos))];
 }
 
 // Manhattan distance from a to b.
@@ -179,7 +171,7 @@ std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const 
    World::Pos closest = start;
    auto bestDistance = getDistance(start, dest);
 
-   bool onLand = isLand(start[0], start[1]);
+   bool onLand = isLand(start);
 
    World::Pos current;
    while (!frontier.empty()) {
@@ -232,26 +224,7 @@ std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const 
       current = posInfoMap[current].previous;
       path.push_back(current);
    }
-
    return path;
-
-   /*
-   std::vector<World::Pos> path;
-   int direction[2]{dest[0] - start[0] < 0 ? -1 : 1, dest[1] - start[1] < 0 ? -1 : 1};
-   path.reserve(getDistance(start, dest));
-   path.push_back(std::move(start));
-   const World::Pos* pos = &path.back();
-   while ((*pos)[0] != dest[0]) {
-      path.push_back(World::Pos{(*pos)[0] + direction[0], (*pos)[1]});
-      pos = &path.back();
-   }
-   while ((*pos)[1] != dest[1]) {
-      path.push_back(World::Pos{(*pos)[0], (*pos)[1] + direction[1]});
-      pos = &path.back();
-   }
-
-   return path;
-   */
 }
 
 decltype(World::creatures)::const_iterator World::getCreatures(std::int64_t x,
@@ -291,35 +264,6 @@ std::size_t World::PosHash::operator()(Pos const& pos) const {
    highBits <<= halfNumBits;
    assert((lowBits & highBits) == 0);
    return (lowBits | highBits);
-}
-
-void World::testHash() const {
-   /*
-   World::PosHash hash{};
-   std::cerr << "-386: " << hash({-386, -128}) << '\n';
-   std::cerr << "-385: " << hash({-385, -128}) << '\n';
-   std::cerr << "-384: " << hash({-384, -128}) << '\n';
-   std::cerr << "-383: " << hash({-383, -128}) << '\n';
-   std::cerr << "-382: " << hash({-382, -128}) << '\n';
-   std::cerr << "-130: " << hash({-130, -128}) << '\n';
-   std::cerr << "-129: " << hash({-129, -128}) << '\n';
-   std::cerr << "-128: " << hash({-128, -128}) << '\n';
-   std::cerr << "-127: " << hash({-127, -128}) << '\n';
-   std::cerr << "-126: " << hash({-126, -128}) << '\n';
-   std::cerr << "-1: " << hash({-1, -128}) << '\n';
-   std::cerr << "0: " << hash({0, -128}) << '\n';
-   std::cerr << "1: " << hash({1, -128}) << '\n';
-   std::cerr << "126: " << hash({126, -128}) << '\n';
-   std::cerr << "127: " << hash({127, -128}) << '\n';
-   std::cerr << "128: " << hash({128, -128}) << '\n';
-   std::cerr << "129: " << hash({129, -128}) << '\n';
-   std::cerr << "130: " << hash({130, -128}) << '\n';
-   std::cerr << "382: " << hash({382, -128}) << '\n';
-   std::cerr << "383: " << hash({383, -128}) << '\n';
-   std::cerr << "384: " << hash({384, -128}) << '\n';
-   std::cerr << "385: " << hash({385, -128}) << '\n';
-   std::cerr << "386: " << hash({386, -128}) << '\n';
-   */
 }
 
 // vim: tw=90 sts=-1 sw=3 et fdm=marker
