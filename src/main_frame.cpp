@@ -27,7 +27,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       topSizer{new wxBoxSizer{wxHORIZONTAL}},
       worldPanel{new wxPanel{topPanel}},
       worldPanelSizer{new wxBoxSizer{wxHORIZONTAL}},
-      controlsSizer{new wxStaticBoxSizer{wxVERTICAL, worldPanel, u8"Creatures"}},
+      controlsSizer{new wxStaticBoxSizer{wxVERTICAL, worldPanel, u8"Creature types"}},
       controlsBox{controlsSizer->GetStaticBox()},
       creatureChoice{new wxChoice{controlsBox, wxID_ANY}},
       propertyLabels{{new wxStaticText{controlsBox, wxID_ANY, u8"Strength"},
@@ -124,13 +124,11 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       controlsSizer->Add(hBoxSizer, 0, wxEXPAND | wxALL, 2);
    }
    controlsSizer->Add(attributeEntry, 0, wxEXPAND | wxALL, 2);
-   {
-      wxSize minSize = attributeEntry->GetMinClientSize();
-      // FIXME: the text entry's minimum width should be automatically adjusted based on
-      // its contents to prevent line wrapping.
-      minSize.SetWidth(std::max(minSize.GetWidth(), 130));
-      attributeEntry->SetMinClientSize(minSize);
-   }
+   // Make the text control just big enough to contain the text "Wasserbewohner" on one
+   // line without horizontal scrolling.
+   // [1]: http://docs.wxwidgets.org/trunk/classwx_control.html
+   attributeEntry->SetInitialSize(attributeEntry->GetSizeFromTextSize(
+       attributeEntry->GetTextExtent("Wasserbewohner")));
    worldPanelSizer->AddStretchSpacer();
    worldPanelSizer->Add(controlsSizer, 0, wxTOP | wxRIGHT, 4);
    worldPanel->SetSizer(worldPanelSizer);
@@ -188,11 +186,11 @@ void MainFrame::updateAttributes(std::size_t creatureIndex) {
    attributeEntry->Clear();
    *attributeEntry << attributes;
 
-   int width = attributeEntry->GetMinClientSize().GetWidth();
-   attributeEntry->SetMinClientSize(wxSize{width, 0});
-   attributeEntry->SetClientSize(width, 0);
+   // Make the attributeEntry text control just heigh enough to make all its text visible
+   // without scrolling.
+   attributeEntry->SetMinClientSize(wxSize{-1, 0});
+   attributeEntry->SetClientSize(-1, 0);
    attributeEntry->SetMinClientSize(attributeEntry->GetBestVirtualSize());
-
    worldPanelSizer->Layout();
 }
 
