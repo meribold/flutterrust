@@ -1,8 +1,9 @@
 #ifndef TUPLE_HELPERS_HPP_5PDXFRA6
 #define TUPLE_HELPERS_HPP_5PDXFRA6
 
+#include <iostream>
 #include <tuple>
-#include <type_traits> // enable_if, underlying_type_t
+#include <type_traits>  // enable_if, underlying_type_t
 
 // Apply a functor template to all members of an std::tuple.
 // http://stackoverflow.com/q/1198260/iterate-over-tuple

@@ -56,7 +56,8 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
          terrainBitmaps[i].LoadFile(filePath.GetFullPath(), wxBITMAP_TYPE_TGA);
       }
    }
-   // ...
+   // Load the graphics used for creatures.  The bitmaps can be accessed using the indices
+   // returned by Creature::getTypeIndex().
    {
       creatureBitmaps.reserve(Creature::getTypes().size());
       // Construct a directory path.  The second argument would be the file name and only
@@ -77,6 +78,13 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
          creatureChoice->Append(creatureType.getName());
       }
    }
+   // Load the graphic used to visualize paths for testing.
+   {
+      wxFileName filePath{dataDir, u8"path.tga", wxPATH_NATIVE};
+      filePath.AppendDir(u8"icons");
+      pathBitmap.LoadFile(filePath.GetFullPath());
+   }
+
    wxWindowID myID_VIEW_CREATURES = NewControlId();
    wxWindowID myID_PLAY_PAUSE = NewControlId();
    {
@@ -276,6 +284,10 @@ void MainFrame::onPaint(wxPaintEvent&) {
       ++worldY;
       drawOffsetY += tileSize;
    }
+
+   for (const auto& pos : testPath) {
+      dC.DrawBitmap(pathBitmap, worldToPanelX(pos[0]), worldToPanelY(pos[1]));
+   }
 }
 
 void MainFrame::onCreatureChoice(wxCommandEvent& event) {
@@ -305,8 +317,14 @@ void MainFrame::onLeftDown(wxMouseEvent& event) {
 
    oldMousePos = event.GetPosition();
 
-   Bind(wxEVT_MOTION, &MainFrame::onMotion, this);
-   Bind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
+   if (event.ShiftDown()) {
+      leftDownEvent = event;
+      Bind(wxEVT_MOTION, &MainFrame::onShiftMotion, this);
+      Bind(wxEVT_LEFT_UP, &MainFrame::onShiftLeftUp, this);
+   } else {
+      Bind(wxEVT_MOTION, &MainFrame::onMotion, this);
+      Bind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
+   }
 
    // It is generally recommended to Skip() all non-command events [1].  This allows other
    // event handlers (including default ones) to react to the event.  Without it,
@@ -338,20 +356,52 @@ void MainFrame::onMotion(wxMouseEvent& event) {
    event.Skip();
 }
 
+void MainFrame::onShiftMotion(wxMouseEvent& event) {
+   assert(HasCapture());
+   // FIXME: reduce redundant computations.
+   if (panelToWorld(oldMousePos) != panelToWorld(event.GetPosition())) {
+      World::Pos start{panelToWorldX(leftDownEvent.GetX()),
+                       panelToWorldY(leftDownEvent.GetY())};
+      World::Pos dest{panelToWorldX(event.GetX()), panelToWorldY(event.GetY())};
+      refreshPath();
+      testPath = world.getPath(std::move(start), std::move(dest));
+      refreshPath();
+      oldMousePos.x = event.GetX();
+      oldMousePos.y = event.GetY();
+   }
+   event.Skip();
+}
+
 // Process a wxEVT_LEFT_UP.
 void MainFrame::onLeftUp(wxMouseEvent&) {
 #ifdef DEBUG
    assert(HasCapture());
-   bool didUnbind = Unbind(wxEVT_MOTION, &MainFrame::onMotion, this) &&
-                    Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
-   assert(didUnbind);
+   assert(Unbind(wxEVT_MOTION, &MainFrame::onMotion, this) &&
+          Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this));
+#else
+   Unbind(wxEVT_MOTION, &MainFrame::onMotion, this);
+   Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
 #endif
    ReleaseMouse();
    // Somehow skipping this event crashes the program  :/
    // event.Skip();
 }
 
-std::int64_t MainFrame::panelToWorldX(int panelX) {
+void MainFrame::onShiftLeftUp(wxMouseEvent&) {
+#ifdef DEBUG
+   assert(HasCapture());
+   assert(Unbind(wxEVT_MOTION, &MainFrame::onShiftMotion, this) &&
+          Unbind(wxEVT_LEFT_UP, &MainFrame::onShiftLeftUp, this));
+#else
+   Unbind(wxEVT_MOTION, &MainFrame::onShiftMotion, this);
+   Unbind(wxEVT_LEFT_UP, &MainFrame::onShiftLeftUp, this);
+#endif
+   refreshPath();
+   testPath.clear();
+   ReleaseMouse();
+}
+
+std::int64_t MainFrame::panelToWorldX(int panelX) const {
    std::int64_t x = panelX + scrollOffX;
    if (x >= 0) {
       x /= tileSize;
@@ -361,7 +411,7 @@ std::int64_t MainFrame::panelToWorldX(int panelX) {
    return x;
 }
 
-std::int64_t MainFrame::panelToWorldY(int panelY) {
+std::int64_t MainFrame::panelToWorldY(int panelY) const {
    std::int64_t y = panelY + scrollOffY;
    if (y >= 0) {
       y /= tileSize;
@@ -371,9 +421,27 @@ std::int64_t MainFrame::panelToWorldY(int panelY) {
    return y;
 }
 
+wxPoint MainFrame::panelToWorld(wxPoint point) const {
+   point.x = panelToWorldX(point.x);
+   point.y = panelToWorldY(point.y);
+   return point;
+}
+
+int MainFrame::worldToPanelX(std::int64_t worldX) const {
+   int panelX = worldX * tileSize - scrollOffX;
+   assert(panelToWorldX(panelX) == worldX);
+   return panelX;
+}
+
+int MainFrame::worldToPanelY(std::int64_t worldY) const {
+   int panelY = worldY * tileSize - scrollOffY;
+   assert(panelToWorldY(panelY) == worldY);
+   return panelY;
+}
+
 // Return a wxRect specifying the area of the tile the given point falls into.  Can be
 // used with wxWindow::RefreshRect(const wxRect&).
-wxRect MainFrame::getTileArea(int x, int y) {
+wxRect MainFrame::getTileArea(int x, int y) const {
    assert(x >= 0 && y >= 0);
    // Get the given coordinates (x, y) relative to the absolute origin.
    wxRect rect{static_cast<int>(scrollOffX + x), static_cast<int>(scrollOffY + y),
@@ -403,6 +471,15 @@ wxRect MainFrame::getTileArea(int x, int y) {
    assert((scrollOffX + rect.x) % tileSize == 0);
    assert((scrollOffY + rect.y) % tileSize == 0);
    return rect;
+}
+
+// Invalidate the area of all tiles corresponding to positions in testPath.  The
+// invalidated area will be repainted during the next event loop iteration.
+void MainFrame::refreshPath() {
+   for (const auto& pos : testPath) {
+      wxRect rect{worldToPanelX(pos[0]), worldToPanelY(pos[1]), tileSize, tileSize};
+      worldPanel->RefreshRect(rect, false);
+   }
 }
 
 // Process a wxEVT_CONTEXT_MENU inside the worldPanel.

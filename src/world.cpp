@@ -1,18 +1,25 @@
-#include <cassert>  // assert
-#include <climits>  // CHAR_BIT
-#include <cmath>    // pow, lround
-#include <cstdint>  // int64_t
-#include <cstdlib>  // abs
+#include <cassert>        // assert
+#include <climits>        // CHAR_BIT
+#include <cmath>          // pow, lround, abs
+#include <cstdint>        // int64_t
+#include <cstdlib>        // abs
+#include <queue>          // priority_queue
+#include <unordered_map>  // unordered_map
+#include <vector>         // vector
+
+#ifdef DEBUG
+#include <iostream>
+#endif
 
 #include "world.hpp"
 
 World::World() {}
 
 void World::step() {
-   // ...
+   // TODO.
 }
 
-bool World::isCached(std::int64_t x, std::int64_t y) {
+bool World::isCached(std::int64_t x, std::int64_t y) const {
    return (left <= x && x < left + 2 * terrainBlockSize && top <= y &&
            y < top + 2 * terrainBlockSize);
 }
@@ -103,6 +110,14 @@ TileType World::getTileType(std::int64_t x, std::int64_t y) const {
    return terrainBlocks[blockIndex][i][j];
 }
 
+bool World::isWater(std::int64_t x, std::int64_t y) const {
+   return toUT(getTileType(x, y)) <= 1;
+}
+
+bool World::isLand(std::int64_t x, std::int64_t y) const {
+   return toUT(getTileType(x, y)) >= 2;
+}
+
 bool World::addCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y) {
    // When trying to place a creature on a tile of hostile type (e.g. a fish on land),
    // don't do anything and return false.  FIXME: just assert we don't try to do that, the
@@ -118,6 +133,125 @@ bool World::addCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y) {
    int lifetime = creatureType.getLifetime();
    creatures.emplace(Pos{x, y}, Creature{typeIndex, lifetime});
    return true;
+}
+
+int World::getMovementCost(const World::Pos& pos, bool terrestrial) const {
+   // Movement costs for aquatic and terrestrial animals.
+   static constexpr std::array<int, toUT(TileType::SIZE)> movementCosts[2]{
+       {3, 1, -1, -1, -1, -1}, {-1, -1, 1, 1, 4, 2}};
+   return movementCosts[terrestrial][toUT(getTileType(pos[0], pos[1]))];
+}
+
+// Manhattan distance from a to b.
+std::int64_t World::getDistance(const World::Pos& a, const World::Pos& b) const {
+   return std::abs(b[0] - a[0]) + std::abs(b[1] - a[1]);
+}
+
+// Compute the shortest path from `start` to `dest` using the A* algorithm.  Based on
+// [this introduction][1].  TODO: based on the demos, I think the linked page uses the
+// estimated distance to the destination as a tiebreaker when multiple positions have the
+// same priority; mayby implement that optimization.
+// [1]: http://redblobgames.com/pathfinding/a-star/introduction.html
+std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const {
+   using P3 = std::pair<int, World::Pos>;  // Priority-position pair.
+   struct P3Compare {
+      constexpr bool operator()(const P3& lhs, const P3& rhs) const {
+         return lhs.first > rhs.first;
+      }
+   };
+   // The element with the smallest priority is returned by frontier.top() and removed
+   // with frontier.pop().
+   std::priority_queue<P3, std::vector<P3>, P3Compare> frontier;
+   frontier.emplace(0, start);
+
+   // Extra information saved for positions we visited: the previous position based on the
+   // best known path and the resulting total cost.
+   struct PosInfo {
+      World::Pos previous;
+      unsigned cost;
+   };
+   // TODO: maybe use an array.
+   std::unordered_map<World::Pos, PosInfo, World::PosHash> posInfoMap{
+       {start, PosInfo{{0, 0}, 0}}};
+
+   // When `dest` can't be reached, we return the fastest path to the closest reachable
+   // position.
+   World::Pos closest = start;
+   auto bestDistance = getDistance(start, dest);
+
+   bool onLand = isLand(start[0], start[1]);
+
+   World::Pos current;
+   while (!frontier.empty()) {
+      current = frontier.top().second;
+      frontier.pop();
+      if (current == dest) {
+         break;
+      }
+      static constexpr World::Pos neighborOffsets[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
+      for (const auto& offset : neighborOffsets) {
+         World::Pos next{current[0] + offset[0], current[1] + offset[1]};
+         // Only look at the cached part of the map.  XXX: this means the path will depend
+         // on which part of the map is cached in some cases.
+         if (!isCached(next[0], next[1])) {
+            continue;
+         }
+         int tileCost = getMovementCost(next, onLand);
+         if (tileCost < 0) {
+            continue;
+         }
+         unsigned nextCost = posInfoMap[current].cost + tileCost;
+         auto it = posInfoMap.find(next);
+         if (it != posInfoMap.end()) {
+            // We already visited this position.
+            const PosInfo& nextInfo = it->second;
+            if (nextCost >= nextInfo.cost) {
+               // We already have a path to `next` that's just as fast or faster.
+               continue;
+            }
+         }
+         // This is the best path to `next` so far.
+         auto distance = getDistance(next, dest);
+         frontier.emplace(nextCost + distance, next);
+         posInfoMap[next] = PosInfo{current, nextCost};
+         if (distance < bestDistance) {
+            closest = next;
+            bestDistance = distance;
+         }
+      }
+   }
+
+   // Construct the path by going backwards from the destination (or the closest position
+   // to the destination).
+   if (current != dest) {
+      current = closest;
+   }
+   std::vector<World::Pos> path;
+   path.push_back(current);
+   while (current != start) {
+      current = posInfoMap[current].previous;
+      path.push_back(current);
+   }
+
+   return path;
+
+   /*
+   std::vector<World::Pos> path;
+   int direction[2]{dest[0] - start[0] < 0 ? -1 : 1, dest[1] - start[1] < 0 ? -1 : 1};
+   path.reserve(getDistance(start, dest));
+   path.push_back(std::move(start));
+   const World::Pos* pos = &path.back();
+   while ((*pos)[0] != dest[0]) {
+      path.push_back(World::Pos{(*pos)[0] + direction[0], (*pos)[1]});
+      pos = &path.back();
+   }
+   while ((*pos)[1] != dest[1]) {
+      path.push_back(World::Pos{(*pos)[0], (*pos)[1] + direction[1]});
+      pos = &path.back();
+   }
+
+   return path;
+   */
 }
 
 decltype(World::creatures)::const_iterator World::getCreatures(std::int64_t x,
@@ -159,7 +293,7 @@ std::size_t World::PosHash::operator()(Pos const& pos) const {
    return (lowBits | highBits);
 }
 
-void World::testHash() {
+void World::testHash() const {
    /*
    World::PosHash hash{};
    std::cerr << "-386: " << hash({-386, -128}) << '\n';

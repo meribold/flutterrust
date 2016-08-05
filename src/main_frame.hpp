@@ -25,9 +25,14 @@ class MainFrame : public wxFrame {
              const wxSize& = wxDefaultSize);
 
   private:
-   std::int64_t panelToWorldX(int panelX);
-   std::int64_t panelToWorldY(int panelY);
-   wxRect getTileArea(int x, int y);
+   std::int64_t panelToWorldX(int panelX) const;
+   std::int64_t panelToWorldY(int panelY) const;
+   wxPoint panelToWorld(wxPoint) const;
+   int worldToPanelX(std::int64_t worldX) const;
+   int worldToPanelY(std::int64_t worldY) const;
+   wxRect getTileArea(int x, int y) const;
+
+   void refreshPath();
 
    void updateAttributes(std::size_t creatureIndex);
 
@@ -43,8 +48,10 @@ class MainFrame : public wxFrame {
    // Process a wxEVT_MOUSE_CAPTURE_LOST; handling this event is mandatory for an
    // application that captures the mouse.
    void onCaptureLost(wxMouseCaptureLostEvent&);
-   void onMotion(wxMouseEvent&);  // Process a wxEVT_MOTION.
-   void onLeftUp(wxMouseEvent&);  // Process a wxEVT_LEFT_UP.
+   void onMotion(wxMouseEvent&);       // Process a wxEVT_MOTION.
+   void onShiftMotion(wxMouseEvent&);  // Process a wxEVT_MOTION.
+   void onLeftUp(wxMouseEvent&);       // Process a wxEVT_LEFT_UP.
+   void onShiftLeftUp(wxMouseEvent&);  // Process a wxEVT_LEFT_UP.
 
    // Process a wxEVT_CONTEXT_MENU inside the worldPanel.
    void onContextMenuRequested(wxContextMenuEvent&);
@@ -57,8 +64,10 @@ class MainFrame : public wxFrame {
                              // to unsigned types ("usual arithmetic conversions").
    std::int64_t scrollOffX = 0, scrollOffY = 0;
    wxPoint oldMousePos;
+   wxMouseEvent leftDownEvent;
 
    wxPoint contextMenuPos;
+   std::vector<World::Pos> testPath;
 
    wxMenuBar* menuBar;
    wxPanel* topPanel;
@@ -78,6 +87,8 @@ class MainFrame : public wxFrame {
 
    std::array<wxBitmap, 6> terrainBitmaps;
    std::vector<wxBitmap> creatureBitmaps;
+   wxBitmap pathBitmap;
+
    World world;
 };
 
