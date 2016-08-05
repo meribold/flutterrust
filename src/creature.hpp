@@ -36,15 +36,6 @@ class Creature {
    inline bool isCarnivore() const;
 
   private:
-   // Movement costs for aquatic and terrestrial animals.  TODO: should this be in
-   // creature_type.hpp?
-   /*
-   static constexpr std::array<int, toUT(TileType::SIZE)> aquaticMovementCosts{
-       3, 1, -1, -1, -1, -1};
-   static constexpr std::array<int, toUT(TileType::SIZE)> terrestrialMovementCosts{
-       -1, -1, 1, 1, 4, 2};
-   */
-
    static std::vector<CreatureType> creatureTypes;
 
    const std::size_t typeIndex;
