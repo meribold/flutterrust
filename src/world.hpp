@@ -6,16 +6,22 @@
 #include <cstdint>        // int64_t
 #include <limits>         // numeric_limits
 #include <unordered_map>  // unordered_multimap
+#include <utility>        // std::pair
 #include <vector>         // vector
+
+#include <experimental/optional>
 
 #include "creature.hpp"
 #include "creature_type.hpp"
 #include "map_generator.hpp"
 #include "tile_type.hpp"
 
+namespace ex9l = std::experimental;
+
 class World {
   public:
    using Pos = std::array<std::int64_t, 2>;
+   using CreatureInfo = std::pair<const Pos, Creature>;
 
    World();
 
@@ -26,6 +32,7 @@ class World {
    // std::array<std::int64_t, 2> getOrigin();
 
    bool isCached(std::int64_t x, std::int64_t y) const;
+   bool isCached(const Pos&) const;
 
    void assertCached(std::int64_t left, std::int64_t top, std::int64_t width,
                      std::int64_t height);
@@ -40,25 +47,44 @@ class World {
    inline bool isLand(std::int64_t x, std::int64_t y) const;
    inline bool isLand(Pos) const;
 
-   bool addCreature(std::size_t creatureType, std::int64_t x, std::int64_t y);
+   // Can a creature of the given type survive at the given position?  I.e., does the tile
+   // type match the creatures natural environment (auqatic or terrestrial)?
+   bool isGoodPosition(const CreatureType&, Pos) const;
 
-   int getMovementCost(const World::Pos&, bool onLand) const;
+   int countCreatures(const Pos&, int radius, std::size_t creatureTypeIndex) const;
+
+   // void spawnCreature(CreatureInfo&);
+   void spawnCreature(std::size_t creatureType, std::int64_t x, std::int64_t y);
+   // TODO:
+   // void spawnPlant(CreatureInfo& parent);
+   // void spawnAnimal(CreatureInfo& parent);
+
+   ex9l::optional<CreatureInfo> getOffspring(CreatureInfo& parentInfo);
+   // TODO:
+   // CreatureInfo* spawnOffspring(CreatureInfo& parentInfo);
+   // CreatureInfo* spawnOffspring(CreatureInfo& parentInfo);
+
+   void age(CreatureInfo&);
+   void age(Creature&, int lifetime);
+   void leech(Creature& actor, Creature& target, int lifetime);
+   void procreate(Creature&);
+
+   int getMovementCost(const Pos&, bool onLand) const;
 
    // Manhattan metric.
    std::int64_t getDistance(const Pos&, const Pos&) const;
 
    std::vector<Pos> getPath(Pos start, Pos dest) const;
 
-  private:
    struct PosHash {
       std::size_t operator()(const Pos& pos) const;
    };
 
-  public:
-   std::unordered_multimap<World::Pos, Creature, World::PosHash> creatures;
+   std::unordered_multimap<Pos, Creature, PosHash> creatures;
 
    // TODO getCreatureIterator()();
-   decltype(creatures)::const_iterator getCreatures(std::int64_t x, std::int64_t y);
+   decltype(creatures)::iterator getCreatures(const Pos&);
+   decltype(creatures)::const_iterator getCreatures(const Pos&) const;
 
   private:
    MapGenerator mapGen;
@@ -73,6 +99,8 @@ class World {
    // ~~MapGenerator will be invoked to update the cache~~ program will crash.
    std::int64_t top = std::numeric_limits<std::int64_t>::lowest();
    std::int64_t left = std::numeric_limits<std::int64_t>::lowest();
+
+   int currentStep = 1;
 };
 
 TileType World::getTileType(World::Pos pos) const { return getTileType(pos[0], pos[1]); }

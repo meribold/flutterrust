@@ -44,6 +44,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
                                     wxTE_READONLY | wxTE_MULTILINE | wxTE_NO_VSCROLL}},
       waterContextMenu{new wxMenu{}},
       landContextMenu{new wxMenu{}},
+      stepTimer{this},
       world{} {
    {
       const std::array<std::string, 6> fileNames{
@@ -86,7 +87,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
    }
 
    wxWindowID myID_VIEW_CREATURES = NewControlId();
-   wxWindowID myID_PLAY_PAUSE = NewControlId();
+   myID_PLAY_PAUSE = NewControlId();
    {
       auto* fileMenu = new wxMenu{};
       fileMenu->Append(wxID_EXIT, "&Quit\tCtrl+Q");
@@ -176,6 +177,8 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
                     worldPanel->GetId());
    worldPanel->Bind(wxEVT_MENU, &MainFrame::onMenuItemSelected, this);
    // worldPanel->Bind(wxEVT_COMMAND_MENU_SELECTED, &MainFrame::onMenuItemSelected, this);
+
+   Bind(wxEVT_TIMER, &MainFrame::onTimer, this);
 
    creatureChoice->SetSelection(0);
    updateAttributes(0);
@@ -296,20 +299,22 @@ void MainFrame::onCreatureChoice(wxCommandEvent& event) {
 }
 
 void MainFrame::onPlayPause(wxCommandEvent&) {
-#ifdef DEBUG
-   if (true)  // TODO
-      std::cerr << "Play\n";
-   else
-      std::cerr << "Pause\n";
-#endif
+   constexpr int interval = 1000;  // In milliseconds.
+   if (!stepTimer.IsRunning()) {
+      menuBar->SetLabel(myID_PLAY_PAUSE, "&Pause\tSpace");
+      step();
+      stepTimer.Start(interval);
+   } else {
+      menuBar->SetLabel(myID_PLAY_PAUSE, "Un&pause\tSpace");
+      stepTimer.Stop();
+   }
 }
 
-void MainFrame::onStep(wxCommandEvent&) {
-#ifdef DEBUG
-   std::cerr << "Step\n";
-#endif
-   world.step();
-}
+// FIXME: ensure that some time passes between finishing computing a step and starting to
+// compute the next one.
+void MainFrame::onTimer(wxTimerEvent&) { step(); }
+
+void MainFrame::onStep(wxCommandEvent&) { step(); }
 
 void MainFrame::onLeftDown(wxMouseEvent& event) {
    assert(!HasCapture());
@@ -334,13 +339,17 @@ void MainFrame::onLeftDown(wxMouseEvent& event) {
 }
 
 // Process a wxEVT_MOUSE_CAPTURE_LOST; handling this event is mandatory for an application
-// that captures the mouse.
+// that captures the mouse.  FIXME: this function doesn't do the correct thing when shift
+// was pressed when we captured the mouse.
 void MainFrame::onCaptureLost(wxMouseCaptureLostEvent& event) {
 #ifdef DEBUG
    assert(!HasCapture());
    bool didUnbind = Unbind(wxEVT_MOTION, &MainFrame::onMotion, this) &&
                     Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
    assert(didUnbind);
+#else
+   Unbind(wxEVT_MOTION, &MainFrame::onMotion, this);
+   Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
 #endif
    event.Skip();
 }
@@ -473,6 +482,11 @@ wxRect MainFrame::getTileArea(int x, int y) const {
    return rect;
 }
 
+void MainFrame::step() {
+   world.step();
+   worldPanel->Refresh(false);  // FIXME: only refresh areas that changed.
+}
+
 // Invalidate the area of all tiles corresponding to positions in testPath.  The
 // invalidated area will be repainted during the next event loop iteration.
 void MainFrame::refreshPath() {
@@ -500,8 +514,7 @@ void MainFrame::onContextMenuRequested(wxContextMenuEvent& event) {
 void MainFrame::onMenuItemSelected(wxCommandEvent& event) {
    std::int64_t worldX = panelToWorldX(contextMenuPos.x);
    std::int64_t worldY = panelToWorldY(contextMenuPos.y);
-   bool success = world.addCreature(event.GetId(), worldX, worldY);
-   assert(success);
+   world.spawnCreature(event.GetId(), worldX, worldY);
    // Invalidate the area of the tile we added a creature to.  It will be repainted during
    // the next event loop iteration.
    worldPanel->RefreshRect(getTileArea(contextMenuPos.x, contextMenuPos.y), false);

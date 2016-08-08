@@ -9,9 +9,7 @@
 #include "tuple_helpers.hpp"
 
 namespace {
-   // Kind of like Haskell's zipWith at compile time with one argement being is a list of
-   // functions.
-   // FIXME: WTF?  This should use generic forEach, that's what it's for...
+   // FIXME: Use the generic forEach?
    template <std::size_t i = 0, typename... Entries, typename... Extractors>
    inline typename std::enable_if<i == sizeof...(Entries), void>::type
    loadResources(std::tuple<Entries...>&,

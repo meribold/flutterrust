@@ -2,8 +2,10 @@
 #define CREATURE_HPP_XZNFGDOY
 
 #include <cassert>  // assert
-#include <string>
-#include <vector>
+#include <cstddef>  // std::size_t
+#include <cstdint>  // int64_t
+#include <string>   // std::string
+#include <vector>   // std::vector
 
 #include "creature_type.hpp"
 #include "tile_type.hpp"
@@ -11,12 +13,12 @@
 
 class World;
 
-class Creature {
-  public:
+struct Creature {
    static void loadTypes(std::string filePath);
    inline static const std::vector<CreatureType>& getTypes();
 
-   inline Creature(std::size_t typeIndex, int lifetime);
+   inline Creature(std::size_t typeIndex, int lastProcreation);
+   inline Creature(std::size_t typeIndex, int lastProcreation, int lifetime);
 
    inline std::size_t getTypeIndex() const;
    inline const CreatureType& getType() const;
@@ -24,7 +26,7 @@ class Creature {
    inline const std::string& getName() const;
    inline int getStrength() const;
    inline int getSpeed() const;
-   inline int getLifetime() const;
+   inline int getMaxLifetime() const;
    inline std::string getAttributeString() const;
    inline const std::string& getBitmapName() const;
 
@@ -35,17 +37,24 @@ class Creature {
    inline bool isHerbivore() const;
    inline bool isCarnivore() const;
 
-  private:
-   static std::vector<CreatureType> creatureTypes;
-
    const std::size_t typeIndex;
    int lifetime;
+   int timeOfLastProcreation;
+   unsigned int aiState = 0;
+
+  private:
+   static std::vector<CreatureType> creatureTypes;
 };
 
 const std::vector<CreatureType>& Creature::getTypes() { return creatureTypes; }
 
-Creature::Creature(std::size_t typeIndex, int lifetime)
-    : typeIndex{typeIndex}, lifetime{lifetime} {}
+Creature::Creature(std::size_t typeIndex, int lastProcreation)
+    : typeIndex{typeIndex},
+      lifetime{creatureTypes[typeIndex].getLifetime()},
+      timeOfLastProcreation{lastProcreation} {}
+
+Creature::Creature(std::size_t typeIndex, int lastProcreation, int lifetime)
+    : typeIndex{typeIndex}, lifetime{lifetime}, timeOfLastProcreation{lastProcreation} {}
 
 std::size_t Creature::getTypeIndex() const { return typeIndex; }
 const CreatureType& Creature::getType() const { return creatureTypes[getTypeIndex()]; }
@@ -53,7 +62,7 @@ const CreatureType& Creature::getType() const { return creatureTypes[getTypeInde
 const std::string& Creature::getName() const { return getType().getName(); }
 int Creature::getStrength() const { return getType().getStrength(); }
 int Creature::getSpeed() const { return getType().getSpeed(); }
-int Creature::getLifetime() const { return getType().getLifetime(); }
+int Creature::getMaxLifetime() const { return getType().getLifetime(); }
 std::string Creature::getAttributeString() const {
    return getType().getAttributeString();
 }

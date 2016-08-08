@@ -1,9 +1,11 @@
+#include <algorithm>      // std::remove_if
 #include <cassert>        // assert
 #include <climits>        // CHAR_BIT
 #include <cmath>          // pow, lround, abs
 #include <cstdint>        // int64_t
 #include <cstdlib>        // abs
 #include <queue>          // priority_queue
+#include <random>         // std::default_random_engine, std::random_device, ...
 #include <unordered_map>  // unordered_map
 #include <vector>         // vector
 
@@ -15,14 +17,99 @@
 
 World::World() {}
 
+// TODO: return a list of positions the GUI should redraw.
 void World::step() {
+#ifdef DEBUG
+   std::cerr << "Step\n";
+#endif
+   /*
+   // Copy all the creatures we will change.  This way, all updates are based on the same
+   // state, since the actual map of creatures isn't touched before all changes are final.
+   // Otherwise, the new state would depend on the order in which we look at creatures.
+   std::vector<std::pair<const World::Pos, Creature>> newState;
+   for (auto it = creatures.begin(); it != creatures.end(); ++it) {
+      const World::Pos& pos = it->first;
+      if (!isCached(pos)) {
+         continue;
+      }
+      // const Creature& creature = it->second;
+      newState.push_back(*it);
+   }
+
    // TODO.
+
+   // Remove all the creatures we updated.
+   // creatures.erase(std::remove_if(creatures.begin(), creatures.end(),
+   //                                [this](const decltype(creatures)::value_type& pair) {
+   //                                   return this->isCached(pair.first);
+   //                                }),
+   //                 creatures.end());
+   for (auto it = creatures.begin(); it != creatures.end();) {
+      const World::Pos& pos = it->first;
+      if (isCached(pos)) {
+         it = creatures.erase(it);
+      } else {
+         ++it;
+      }
+   }
+   */
+
+   std::vector<World::CreatureInfo> newCreatures;
+
+   for (auto it = creatures.begin(); it != creatures.end();) {
+      const World::Pos& pos = it->first;
+      if (!isCached(pos)) {
+         ++it;
+         continue;
+      }
+      Creature& creature = it->second;
+      if (creature.isPlant()) {
+         // runPlantAi(*this, it);
+         int stepsSinceProcreating = currentStep - creature.timeOfLastProcreation;
+         bool shouldGrow = stepsSinceProcreating >= creature.getMaxLifetime() / 100;
+         // bool shouldGrow = currentStep % (creature.getMaxLifetime() / 100) == 0;
+         if (shouldGrow) {
+            // Get the number of plants that have the same type within 5 tiles of the
+            // parent.
+            int nearbyConspecificPlants = countCreatures(pos, 5, creature.getTypeIndex());
+            // std::cerr << nearbyConspecificPlants << '\n';
+            if (2 < nearbyConspecificPlants && nearbyConspecificPlants < 10) {
+               // Directly inserting new creatures into the map can invalidate iterators.
+               // It also would probably depend on its position whether the current
+               // execution of this loop will go over it or not.
+               for (int i = 0; i < 2; ++i) {
+                  auto offspring = getOffspring(*it);
+                  if (offspring) newCreatures.push_back(std::move(*offspring));
+               }
+            }
+            creature.timeOfLastProcreation = currentStep;
+         }
+         age(*it);
+      } else {
+         // TODO.
+         // runAnimalAi(*this, it);
+      }
+
+      if (creature.lifetime <= 0) {
+         it = creatures.erase(it);
+      } else {
+         ++it;
+      }
+   }
+
+   for (auto& offspring : newCreatures) {
+      creatures.insert(offspring);
+   }
+
+   ++currentStep;
 }
 
 bool World::isCached(std::int64_t x, std::int64_t y) const {
    return (left <= x && x < left + 2 * terrainBlockSize && top <= y &&
            y < top + 2 * terrainBlockSize);
 }
+
+bool World::isCached(const World::Pos& pos) const { return isCached(pos[0], pos[1]); }
 
 void World::assertCached(std::int64_t left, std::int64_t top, std::int64_t width,
                          std::int64_t height) {
@@ -94,12 +181,7 @@ void World::assertCached(std::int64_t left, std::int64_t top, std::int64_t width
 
 // Increasing x means going right, increasing y means going down.
 TileType World::getTileType(std::int64_t x, std::int64_t y) const {
-#ifdef DEBUG  // {{{1
-   std::int64_t right = left + 2 * terrainBlockSize;
-   std::int64_t bottom = top + 2 * terrainBlockSize;
-   assert(left <= x && x < right);
-   assert(top <= y && y < bottom);
-#endif  // }}}1
+   assert(isCached(x, y));
    auto i = y - top;
    auto j = x - left;
    auto blockIndex = 2 * (i / terrainBlockSize) + j / terrainBlockSize;
@@ -110,21 +192,113 @@ TileType World::getTileType(std::int64_t x, std::int64_t y) const {
    return terrainBlocks[blockIndex][i][j];
 }
 
-bool World::addCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y) {
-   // When trying to place a creature on a tile of hostile type (e.g. a fish on land),
-   // don't do anything and return false.  FIXME: just assert we don't try to do that, the
-   // UI shouldn't allow it anymore.
-   const TileType tileType = getTileType(x, y);
-   const CreatureType& creatureType = Creature::getTypes()[typeIndex];
-   bool aquatic = creatureType.isAquatic();
+bool World::isGoodPosition(const CreatureType& creatureType, World::Pos pos) const {
+   assert(isCached(pos));
+   const TileType tileType = getTileType(pos);
    if (tileType == TileType::deepWater || tileType == TileType::water) {
-      if (!aquatic) return false;
+      return creatureType.isAquatic();
    } else {
-      if (aquatic) return false;
+      return creatureType.isTerrestrial();
    }
-   int lifetime = creatureType.getLifetime();
-   creatures.emplace(Pos{x, y}, Creature{typeIndex, lifetime});
-   return true;
+}
+
+int World::countCreatures(const World::Pos& pos, int radius,
+                          std::size_t creatureTypeIndex) const {
+   int count = 0;
+   for (int xOffset = -radius; xOffset <= radius; ++xOffset) {
+      int maxYOffset = radius - std::abs(xOffset);
+      for (int yOffset = -maxYOffset; yOffset <= maxYOffset; ++yOffset) {
+         assert(std::abs(xOffset) + std::abs(yOffset) <= radius);
+         auto range = creatures.equal_range({pos[0] + xOffset, pos[1] + yOffset});
+         for (auto it = range.first; it != range.second; ++it) {
+            if (it->second.getTypeIndex() == creatureTypeIndex) {
+               ++count;
+            }
+         }
+      }
+   }
+   return count;
+}
+
+void World::spawnCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y) {
+#ifdef DEBUG  // {{{1
+/*
+const TileType tileType = getTileType(x, y);
+const CreatureType& creatureType = Creature::getTypes()[typeIndex];
+bool aquatic = creatureType.isAquatic();
+if (tileType == TileType::deepWater || tileType == TileType::water) {
+   assert(aquatic);
+} else {
+   assert(!aquatic);
+}
+*/
+#endif  // }}}1
+   // Assert we don't try to place a creature on a hostile tile (e.g. a fish on land).
+   assert(isGoodPosition(Creature::getTypes()[typeIndex], {x, y}));
+   // int lifetime = creatureType.getLifetime();
+   // creatures.emplace(Pos{x, y}, Creature{typeIndex, lifetime});
+   creatures.emplace(Pos{x, y}, Creature{typeIndex, currentStep});
+}
+
+ex9l::optional<World::CreatureInfo> World::getOffspring(World::CreatureInfo& parentInfo) {
+   static std::default_random_engine rNG(std::random_device{}());
+   static std::uniform_int_distribution<int> rNDist{-5, 5};
+   static std::uniform_int_distribution<int> coin(0, 1);
+   // Ranges from 0 to the biggest representable value.
+   static std::uniform_int_distribution<int> defaultDist{};
+
+   const World::Pos& pos = parentInfo.first;
+   Creature& parent = parentInfo.second;
+   const CreatureType& creatureType = parent.getType();
+   if (parent.isPlant()) {
+      // Randomly pick a position and create offspring if the position's type matches the
+      // plants natural environment (land or water).  TODO: create a list of eligible
+      // positions first and randomly pick one instead?
+      int xOffset = rNDist(rNG);
+      int yOffset = 5 - std::abs(xOffset);
+      if (coin(rNG)) {
+         yOffset = -yOffset;
+      }
+      World::Pos childPos{pos[0] + xOffset, pos[1] + yOffset};
+      assert(getDistance(pos, childPos) == 5);
+      if (!isCached(childPos)) {
+         return {};
+      }
+      if (!isGoodPosition(creatureType, childPos)) {
+         return {};
+      }
+      auto range = creatures.equal_range(childPos);
+      for (auto it = range.first; it != range.second; ++it) {
+         if (it->second.isPlant()) {
+            return {};  // The tile is already covered by vegetation.
+         }
+      }
+      // Add a random delay before the plant can procreate for the first time.  Otherwise
+      // all plants of the same type tend to always produce offspring in the same step.
+      int procreationInterval = parent.getMaxLifetime() / 100;
+      int lastProcreation =
+          currentStep - procreationInterval / 2 + defaultDist(rNG) % procreationInterval;
+      return World::CreatureInfo{childPos,
+                                 Creature{parent.getTypeIndex(), lastProcreation}};
+   } else {
+      return {};  // TODO.
+   }
+}
+
+void World::age(CreatureInfo& creatureInfo) {
+   Creature& creature = creatureInfo.second;
+   if (creature.isPlant()) {
+      const World::Pos& pos = creatureInfo.first;
+      const TileType tileType = getTileType(pos);
+      if (tileType == TileType::water || tileType == TileType::sand ||
+          tileType == TileType::dirt) {
+         creature.lifetime -= 10;
+      } else {
+         creature.lifetime -= 25;
+      }
+   } else {
+      // TODO.
+   }
 }
 
 int World::getMovementCost(const World::Pos& pos, bool terrestrial) const {
@@ -227,9 +401,13 @@ std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const 
    return path;
 }
 
-decltype(World::creatures)::const_iterator World::getCreatures(std::int64_t x,
-                                                               std::int64_t y) {
-   return creatures.find({x, y});
+decltype(World::creatures)::iterator World::getCreatures(const World::Pos& pos) {
+   return creatures.find(pos);
+}
+
+decltype(World::creatures)::const_iterator World::getCreatures(
+    const World::Pos& pos) const {
+   return creatures.find(pos);
 }
 
 // Map a signed integer number z to the interval [0, 2^n - 1].  Injective for the domain

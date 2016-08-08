@@ -16,6 +16,7 @@
 #include <wx/statbox.h>  // wxStaticBox
 #include <wx/stattext.h>
 #include <wx/textctrl.h>
+#include <wx/timer.h>  // wxTimer
 
 #include "world.hpp"
 
@@ -32,6 +33,8 @@ class MainFrame : public wxFrame {
    int worldToPanelY(std::int64_t worldY) const;
    wxRect getTileArea(int x, int y) const;
 
+   void step();
+
    void refreshPath();
 
    void updateAttributes(std::size_t creatureIndex);
@@ -41,6 +44,7 @@ class MainFrame : public wxFrame {
    void onCreatureChoice(wxCommandEvent&);
    void onPlace(wxCommandEvent&);
    void onPlayPause(wxCommandEvent&);
+   void onTimer(wxTimerEvent&);
    void onStep(wxCommandEvent&);
 
    // Process a wxEVT_LEFT_DOWN; captures the mouse.
@@ -69,6 +73,8 @@ class MainFrame : public wxFrame {
    wxPoint contextMenuPos;
    std::vector<World::Pos> testPath;
 
+   wxWindowID myID_PLAY_PAUSE;
+
    wxMenuBar* menuBar;
    wxPanel* topPanel;
    wxBoxSizer* topSizer;
@@ -84,6 +90,7 @@ class MainFrame : public wxFrame {
    // (http://docs.wxwidgets.org/trunk/classwx_menu.html)
    wxMenu* waterContextMenu;
    wxMenu* landContextMenu;
+   wxTimer stepTimer;
 
    std::array<wxBitmap, 6> terrainBitmaps;
    std::vector<wxBitmap> creatureBitmaps;
