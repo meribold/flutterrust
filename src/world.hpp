@@ -26,6 +26,8 @@ class World {
    World();
 
    void step();
+   void updatePlant(CreatureInfo& plant, std::vector<CreatureInfo>& newCreatures);
+   void updateAnimal(CreatureInfo& animal, std::vector<CreatureInfo>& newCreatures);
 
    // The origin is the index pair (i, j) of the top-left terrain block that is cached.
    // void setOrigin(std::int64_t i, std::int64_t j);

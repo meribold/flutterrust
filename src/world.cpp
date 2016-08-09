@@ -1,4 +1,3 @@
-#include <algorithm>      // std::remove_if
 #include <cassert>        // assert
 #include <climits>        // CHAR_BIT
 #include <cmath>          // pow, lround, abs
@@ -19,41 +18,6 @@ World::World() {}
 
 // TODO: return a list of positions the GUI should redraw.
 void World::step() {
-#ifdef DEBUG
-   std::cerr << "Step\n";
-#endif
-   /*
-   // Copy all the creatures we will change.  This way, all updates are based on the same
-   // state, since the actual map of creatures isn't touched before all changes are final.
-   // Otherwise, the new state would depend on the order in which we look at creatures.
-   std::vector<std::pair<const World::Pos, Creature>> newState;
-   for (auto it = creatures.begin(); it != creatures.end(); ++it) {
-      const World::Pos& pos = it->first;
-      if (!isCached(pos)) {
-         continue;
-      }
-      // const Creature& creature = it->second;
-      newState.push_back(*it);
-   }
-
-   // TODO.
-
-   // Remove all the creatures we updated.
-   // creatures.erase(std::remove_if(creatures.begin(), creatures.end(),
-   //                                [this](const decltype(creatures)::value_type& pair) {
-   //                                   return this->isCached(pair.first);
-   //                                }),
-   //                 creatures.end());
-   for (auto it = creatures.begin(); it != creatures.end();) {
-      const World::Pos& pos = it->first;
-      if (isCached(pos)) {
-         it = creatures.erase(it);
-      } else {
-         ++it;
-      }
-   }
-   */
-
    std::vector<World::CreatureInfo> newCreatures;
 
    for (auto it = creatures.begin(); it != creatures.end();) {
@@ -64,33 +28,12 @@ void World::step() {
       }
       Creature& creature = it->second;
       if (creature.isPlant()) {
-         // runPlantAi(*this, it);
-         int stepsSinceProcreating = currentStep - creature.timeOfLastProcreation;
-         bool shouldGrow = stepsSinceProcreating >= creature.getMaxLifetime() / 100;
-         // bool shouldGrow = currentStep % (creature.getMaxLifetime() / 100) == 0;
-         if (shouldGrow) {
-            // Get the number of plants that have the same type within 5 tiles of the
-            // parent.
-            int nearbyConspecificPlants = countCreatures(pos, 5, creature.getTypeIndex());
-            // std::cerr << nearbyConspecificPlants << '\n';
-            if (2 < nearbyConspecificPlants && nearbyConspecificPlants < 10) {
-               // Directly inserting new creatures into the map can invalidate iterators.
-               // It also would probably depend on its position whether the current
-               // execution of this loop will go over it or not.
-               for (int i = 0; i < 2; ++i) {
-                  auto offspring = getOffspring(*it);
-                  if (offspring) newCreatures.push_back(std::move(*offspring));
-               }
-            }
-            creature.timeOfLastProcreation = currentStep;
-         }
-         age(*it);
+         updatePlant(*it, newCreatures);
       } else {
-         // TODO.
-         // runAnimalAi(*this, it);
+         updateAnimal(*it, newCreatures);
       }
-
       if (creature.lifetime <= 0) {
+         // TODO: if it's an animal, display the carcass graphic for 10 steps.
          it = creatures.erase(it);
       } else {
          ++it;
@@ -102,6 +45,36 @@ void World::step() {
    }
 
    ++currentStep;
+}
+
+void World::updatePlant(World::CreatureInfo& plantInfo,
+                        std::vector<World::CreatureInfo>& newCreatures) {
+   const World::Pos& pos = plantInfo.first;
+   Creature& plant = plantInfo.second;
+   int stepsSinceProcreating = currentStep - plant.timeOfLastProcreation;
+   bool shouldGrow = stepsSinceProcreating >= plant.getMaxLifetime() / 100;
+   // bool shouldGrow = currentStep % (plant.getMaxLifetime() / 100) == 0;
+   if (shouldGrow) {
+      // Get the number of plants that have the same type within 5 tiles of the parent.
+      int nearbyConspecificPlants = countCreatures(pos, 5, plant.getTypeIndex());
+      // std::cerr << nearbyConspecificPlants << '\n';
+      if (2 < nearbyConspecificPlants && nearbyConspecificPlants < 10) {
+         // Directly inserting new creatures into the map can invalidate iterators.  It
+         // also would probably depend on its position whether the current execution of
+         // this loop will go over it or not.
+         for (int i = 0; i < 2; ++i) {
+            auto offspring = getOffspring(plantInfo);
+            if (offspring) newCreatures.push_back(std::move(*offspring));
+         }
+      }
+      plant.timeOfLastProcreation = currentStep;
+   }
+   age(plantInfo);
+}
+
+void World::updateAnimal(World::CreatureInfo& animalInfo,
+                         std::vector<World::CreatureInfo>& newCreatures) {
+   // TODO.
 }
 
 bool World::isCached(std::int64_t x, std::int64_t y) const {
@@ -221,22 +194,8 @@ int World::countCreatures(const World::Pos& pos, int radius,
 }
 
 void World::spawnCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y) {
-#ifdef DEBUG  // {{{1
-/*
-const TileType tileType = getTileType(x, y);
-const CreatureType& creatureType = Creature::getTypes()[typeIndex];
-bool aquatic = creatureType.isAquatic();
-if (tileType == TileType::deepWater || tileType == TileType::water) {
-   assert(aquatic);
-} else {
-   assert(!aquatic);
-}
-*/
-#endif  // }}}1
    // Assert we don't try to place a creature on a hostile tile (e.g. a fish on land).
    assert(isGoodPosition(Creature::getTypes()[typeIndex], {x, y}));
-   // int lifetime = creatureType.getLifetime();
-   // creatures.emplace(Pos{x, y}, Creature{typeIndex, lifetime});
    creatures.emplace(Pos{x, y}, Creature{typeIndex, currentStep});
 }
 
