@@ -18,8 +18,7 @@ World::World() {}
 
 // TODO: return a list of positions the GUI should redraw.
 void World::step() {
-   std::vector<World::CreatureInfo> newCreatures;
-
+   ++currentStep;
    for (auto it = creatures.begin(); it != creatures.end();) {
       const World::Pos& pos = it->first;
       if (!isCached(pos)) {
@@ -28,9 +27,9 @@ void World::step() {
       }
       Creature& creature = it->second;
       if (creature.isPlant()) {
-         updatePlant(*it, newCreatures);
+         updatePlant(*it);
       } else {
-         updateAnimal(*it, newCreatures);
+         updateAnimal(*it);
       }
       if (creature.lifetime <= 0) {
          // TODO: if it's an animal, display the carcass graphic for 10 steps.
@@ -40,15 +39,13 @@ void World::step() {
       }
    }
 
-   for (auto& offspring : newCreatures) {
-      creatures.insert(offspring);
+   for (auto& creature : offspringCache) {
+      creatures.insert(creature);
    }
-
-   ++currentStep;
+   offspringCache.clear();
 }
 
-void World::updatePlant(World::CreatureInfo& plantInfo,
-                        std::vector<World::CreatureInfo>& newCreatures) {
+void World::updatePlant(World::CreatureInfo& plantInfo) {
    const World::Pos& pos = plantInfo.first;
    Creature& plant = plantInfo.second;
    int stepsSinceProcreating = currentStep - plant.timeOfLastProcreation;
@@ -59,12 +56,8 @@ void World::updatePlant(World::CreatureInfo& plantInfo,
       int nearbyConspecificPlants = countCreatures(pos, 5, plant.getTypeIndex());
       // std::cerr << nearbyConspecificPlants << '\n';
       if (2 < nearbyConspecificPlants && nearbyConspecificPlants < 10) {
-         // Directly inserting new creatures into the map can invalidate iterators.  It
-         // also would probably depend on its position whether the current execution of
-         // this loop will go over it or not.
          for (int i = 0; i < 2; ++i) {
-            auto offspring = getOffspring(plantInfo);
-            if (offspring) newCreatures.push_back(std::move(*offspring));
+            spawnOffspring(plantInfo);
          }
       }
       plant.timeOfLastProcreation = currentStep;
@@ -72,8 +65,7 @@ void World::updatePlant(World::CreatureInfo& plantInfo,
    age(plantInfo);
 }
 
-void World::updateAnimal(World::CreatureInfo& animalInfo,
-                         std::vector<World::CreatureInfo>& newCreatures) {
+void World::updateAnimal(World::CreatureInfo& animalInfo) {
    // TODO.
 }
 
@@ -199,12 +191,10 @@ void World::spawnCreature(std::size_t typeIndex, std::int64_t x, std::int64_t y)
    creatures.emplace(Pos{x, y}, Creature{typeIndex, currentStep});
 }
 
-ex9l::optional<World::CreatureInfo> World::getOffspring(World::CreatureInfo& parentInfo) {
+bool World::spawnOffspring(World::CreatureInfo& parentInfo) {
    static std::default_random_engine rNG(std::random_device{}());
    static std::uniform_int_distribution<int> rNDist{-5, 5};
    static std::uniform_int_distribution<int> coin(0, 1);
-   // Ranges from 0 to the biggest representable value.
-   static std::uniform_int_distribution<int> defaultDist{};
 
    const World::Pos& pos = parentInfo.first;
    Creature& parent = parentInfo.second;
@@ -221,26 +211,22 @@ ex9l::optional<World::CreatureInfo> World::getOffspring(World::CreatureInfo& par
       World::Pos childPos{pos[0] + xOffset, pos[1] + yOffset};
       assert(getDistance(pos, childPos) == 5);
       if (!isCached(childPos)) {
-         return {};
+         return false;
       }
       if (!isGoodPosition(creatureType, childPos)) {
-         return {};
+         return false;
       }
       auto range = creatures.equal_range(childPos);
       for (auto it = range.first; it != range.second; ++it) {
          if (it->second.isPlant()) {
-            return {};  // The tile is already covered by vegetation.
+            return false;  // The tile is already covered by vegetation.
          }
       }
-      // Add a random delay before the plant can procreate for the first time.  Otherwise
-      // all plants of the same type tend to always produce offspring in the same step.
-      int procreationInterval = parent.getMaxLifetime() / 100;
-      int lastProcreation =
-          currentStep - procreationInterval / 2 + defaultDist(rNG) % procreationInterval;
-      return World::CreatureInfo{childPos,
-                                 Creature{parent.getTypeIndex(), lastProcreation}};
+      offspringCache.push_back(
+          CreatureInfo{childPos, Creature{parent.getTypeIndex(), currentStep}});
+      return true;
    } else {
-      return {};  // TODO.
+      return false;  // TODO.
    }
 }
 

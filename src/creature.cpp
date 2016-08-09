@@ -1,8 +1,9 @@
 #include "creature.hpp"
 
 #include <fstream>    // ifstream
+#include <random>     // std::default_random_engine, std::random_device, ...
 #include <stdexcept>  // runtime_error
-#include <vector>
+#include <vector>     // vector
 
 #include "creature_parser.hpp"
 
@@ -17,6 +18,23 @@ void Creature::loadTypes(std::string filePath) {
 
    std::vector<std::string> errors;
    creatureTypes = loadCreatureTypes(std::move(iStream), errors);
+}
+
+namespace {
+std::default_random_engine rNG(std::random_device{}());
+// Distribution ranging from 0 to the highest representable value.
+std::uniform_int_distribution<int> defaultRNDist{};
+}
+
+Creature::Creature(std::size_t typeIndex, int currentStep)
+    : Creature{typeIndex, currentStep, creatureTypes[typeIndex].getLifetime()} {}
+
+Creature::Creature(std::size_t typeIndex, int currentStep, int lifetime)
+    : typeIndex{typeIndex}, lifetime{lifetime}, timeOfLastProcreation{currentStep} {
+   // Offset the first time the creature can procreate by a random value.  Otherwise all
+   // creatures of the same type tend to always produce offspring in the same step.
+   int procInterval = getMaxLifetime() / 100;
+   timeOfLastProcreation += defaultRNDist(rNG) % procInterval - procInterval / 2;
 }
 
 std::vector<CreatureType> Creature::creatureTypes;

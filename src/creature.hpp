@@ -17,8 +17,8 @@ struct Creature {
    static void loadTypes(std::string filePath);
    inline static const std::vector<CreatureType>& getTypes();
 
-   inline Creature(std::size_t typeIndex, int lastProcreation);
-   inline Creature(std::size_t typeIndex, int lastProcreation, int lifetime);
+   Creature(std::size_t typeIndex, int currentStep);
+   Creature(std::size_t typeIndex, int currentStep, int lifetime);
 
    inline std::size_t getTypeIndex() const;
    inline const CreatureType& getType() const;
@@ -47,14 +47,6 @@ struct Creature {
 };
 
 const std::vector<CreatureType>& Creature::getTypes() { return creatureTypes; }
-
-Creature::Creature(std::size_t typeIndex, int lastProcreation)
-    : typeIndex{typeIndex},
-      lifetime{creatureTypes[typeIndex].getLifetime()},
-      timeOfLastProcreation{lastProcreation} {}
-
-Creature::Creature(std::size_t typeIndex, int lastProcreation, int lifetime)
-    : typeIndex{typeIndex}, lifetime{lifetime}, timeOfLastProcreation{lastProcreation} {}
 
 std::size_t Creature::getTypeIndex() const { return typeIndex; }
 const CreatureType& Creature::getType() const { return creatureTypes[getTypeIndex()]; }

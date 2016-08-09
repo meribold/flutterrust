@@ -9,14 +9,14 @@
 #include <utility>        // std::pair
 #include <vector>         // vector
 
-#include <experimental/optional>
+// #include <experimental/optional>
 
 #include "creature.hpp"
 #include "creature_type.hpp"
 #include "map_generator.hpp"
 #include "tile_type.hpp"
 
-namespace ex9l = std::experimental;
+// namespace ex9l = std::experimental;
 
 class World {
   public:
@@ -26,8 +26,8 @@ class World {
    World();
 
    void step();
-   void updatePlant(CreatureInfo& plant, std::vector<CreatureInfo>& newCreatures);
-   void updateAnimal(CreatureInfo& animal, std::vector<CreatureInfo>& newCreatures);
+   void updatePlant(CreatureInfo& plant);
+   void updateAnimal(CreatureInfo& animal);
 
    // The origin is the index pair (i, j) of the top-left terrain block that is cached.
    // void setOrigin(std::int64_t i, std::int64_t j);
@@ -60,8 +60,9 @@ class World {
    // TODO:
    // void spawnPlant(CreatureInfo& parent);
    // void spawnAnimal(CreatureInfo& parent);
+   bool spawnOffspring(CreatureInfo& parentInfo);
 
-   ex9l::optional<CreatureInfo> getOffspring(CreatureInfo& parentInfo);
+   // ex9l::optional<CreatureInfo> getOffspring(CreatureInfo& parentInfo);
    // TODO:
    // CreatureInfo* spawnOffspring(CreatureInfo& parentInfo);
    // CreatureInfo* spawnOffspring(CreatureInfo& parentInfo);
@@ -102,7 +103,14 @@ class World {
    std::int64_t top = std::numeric_limits<std::int64_t>::lowest();
    std::int64_t left = std::numeric_limits<std::int64_t>::lowest();
 
-   int currentStep = 1;
+   // Used to cache all the offspring spawned in one step before it is inserted into the
+   // hash map.  Directly inserting new creatures into the hash map can invalidate
+   // iterators.  It also would probably depend on the insertee's position whether the
+   // current step's loop over the hash map will have its body executed for the new
+   // creature or not.
+   std::vector<World::CreatureInfo> offspringCache;
+
+   int currentStep = 0;
 };
 
 TileType World::getTileType(World::Pos pos) const { return getTileType(pos[0], pos[1]); }
