@@ -59,10 +59,8 @@ MapGenerator::TerrainBlock MapGenerator::getBlock(std::int64_t row,
       i = 0;
       assert(j == size - 1);
       gradients[i][j] = getGradient();
-      // Throw the remaining (size - 2) random numbers for the top row away.
-      for (std::size_t n = 1; n < size - 1; ++n) {
-         rNDist(rNGen);
-      }
+      // Throw the remaining (size - 2) pairs of random numbers for the top row away.
+      rNGen.discard(2 * size - 4);
       // The next random numbers are those the block to the right uses for its leftmost
       // column.  Use them for the rightmost column.
       for (++i; i < size - 1; ++i) {
@@ -159,7 +157,7 @@ MapGenerator::TerrainBlock MapGenerator::getBlock(std::int64_t row,
          // zero, so the commented out code above doesn't work very well.
 
          // This should kind of move most values into the range [-2.5, 2.5].
-         value *= 13.f;
+         value *= 5.f;
          // Now most should be in the range [0, 5].
          value += 2.5f;
          // Treat everything negative as 0 and everything bigger than or equal to 6 as 5.
@@ -190,15 +188,14 @@ void MapGenerator::seedRNG(std::int64_t i, std::int64_t j) const {
    rNGen.seed(blockSeed ^ seed);
    // Throw some random numbers away.  The first random numbers generated from similar
    // seeds are also very similar.
-   rNDist(rNGen);
-   rNDist(rNGen);
-   rNDist(rNGen);
+   rNGen.discard(3);
 }
 
 std::array<float, 2> MapGenerator::getGradient() const {
    std::array<float, 2> gradient;
    gradient[0] = rNDist(rNGen);
    gradient[1] = std::sqrt(1 - gradient[0] * gradient[0]);
+   if (coin(rNGen)) gradient[1] = -gradient[1];
    return gradient;
 }
 

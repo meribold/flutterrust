@@ -34,7 +34,8 @@ class MapGenerator {
    std::array<float, 2> getGradient() const;
 
    mutable RNGen rNGen;
-   mutable std::uniform_real_distribution<float> rNDist{0.f, 1.f};
+   mutable std::uniform_real_distribution<float> rNDist{-1.f, 1.f};
+   mutable std::uniform_int_distribution<int> coin{0, 1};
    const SeedType seed;
 
    // I stopped using a class template with gridSize as a non-type template parameter
