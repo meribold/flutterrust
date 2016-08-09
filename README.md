@@ -23,6 +23,6 @@ All targets are created in subdirectories of `build`.  The main executable is ca
 *   Right-click to place plants or animals using the context menu.
 *   Hold `shift` and click and drag to test the pathfinding.
 *   Hit `space` to unpause or pause the simulation.
-*   Hit `F` to advance the simulation by a single step.
+*   Hit `F` to advance the simulation by a single step (or hold it to speed things up).
 
 <!-- vim: set tw=90 sts=-1 sw=4 et spell: -->
