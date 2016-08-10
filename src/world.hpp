@@ -3,7 +3,7 @@
 
 #include <array>          // array
 #include <cstddef>        // size_t
-#include <cstdint>        // int64_t
+#include <cstdint>        // int64_t, uint8_t
 #include <limits>         // numeric_limits
 #include <unordered_map>  // unordered_multimap
 #include <utility>        // std::pair
@@ -23,11 +23,20 @@ class World {
    using Pos = std::array<std::int64_t, 2>;
    using CreatureInfo = std::pair<const Pos, Creature>;
 
+   struct PosHash {
+      std::size_t operator()(const Pos& pos) const;
+   };
+
+   std::unordered_multimap<Pos, Creature, PosHash> creatures;
+
+   using CreatureIt = decltype(creatures)::iterator;
+
    World();
 
    void step();
-   void updatePlant(CreatureInfo& plant);
-   void updateAnimal(CreatureInfo& animal);
+   void commitStep();
+   void updatePlant(CreatureInfo&);
+   void updateAnimal(CreatureIt);
 
    // The origin is the index pair (i, j) of the top-left terrain block that is cached.
    // void setOrigin(std::int64_t i, std::int64_t j);
@@ -49,14 +58,18 @@ class World {
    inline bool isLand(std::int64_t x, std::int64_t y) const;
    inline bool isLand(Pos) const;
 
+   // TODO.
+   bool isVegetated(Pos) const;
+
    // Can a creature of the given type survive at the given position?  I.e., does the tile
    // type match the creatures natural environment (auqatic or terrestrial)?
    bool isGoodPosition(const CreatureType&, Pos) const;
+   bool isGoodPosition(const CreatureType&, std::int64_t x, std::int64_t y) const;
 
-   int countCreatures(const Pos&, int radius, std::size_t creatureTypeIndex) const;
+   int countCreatures(const Pos&, int radius, std::uint8_t creatureTypeIndex) const;
 
    // void spawnCreature(CreatureInfo&);
-   void spawnCreature(std::size_t creatureType, std::int64_t x, std::int64_t y);
+   void spawnCreature(std::uint8_t creatureType, std::int64_t x, std::int64_t y);
    // TODO:
    // void spawnPlant(CreatureInfo& parent);
    // void spawnAnimal(CreatureInfo& parent);
@@ -74,20 +87,25 @@ class World {
 
    int getMovementCost(const Pos&, bool onLand) const;
 
-   // Manhattan metric.
-   std::int64_t getDistance(const Pos&, const Pos&) const;
+   // Get a random position the animal should move to.
+   std::uint16_t generateRoamState(const CreatureInfo&) const;
 
+   void roam(CreatureIt animalIt);
+
+   // Get the shortest path from `start` to `dest` using the A* algorithm.
    std::vector<Pos> getPath(Pos start, Pos dest) const;
 
-   struct PosHash {
-      std::size_t operator()(const Pos& pos) const;
-   };
+   // Get all positions that are reachable without moving a distance greater than
+   // `maxDist`.  I.e., positions that are within a distance of `maxDist` but require
+   // moving along a longer path (e.g. because something blocks a more direct one) are
+   // excluded.  Uses breadth-first search.
+   std::vector<Pos> getReachablePositions(const Pos& start, int maxDist) const;
 
-   std::unordered_multimap<Pos, Creature, PosHash> creatures;
+   Pos moveTowards(CreatureIt animalIt, const Pos& dest);
 
    // TODO getCreatureIterator()();
-   decltype(creatures)::iterator getCreatures(const Pos&);
-   decltype(creatures)::const_iterator getCreatures(const Pos&) const;
+   // decltype(creatures)::iterator getCreatures(const Pos&);
+   // decltype(creatures)::const_iterator getCreatures(const Pos&) const;
 
   private:
    MapGenerator mapGen;
@@ -110,8 +128,14 @@ class World {
    // creature or not.
    std::vector<World::CreatureInfo> offspringCache;
 
+   // Movee: one who is being moved, obviously.
+   std::vector<std::pair<const Pos, CreatureIt>> moveeCache;
+
    int currentStep = 0;
 };
+
+// Manhattan metric.
+std::int64_t distance(const World::Pos&, const World::Pos&);
 
 TileType World::getTileType(World::Pos pos) const { return getTileType(pos[0], pos[1]); }
 

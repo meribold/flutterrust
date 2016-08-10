@@ -26,11 +26,11 @@ std::default_random_engine rNG(std::random_device{}());
 std::uniform_int_distribution<int> defaultRNDist{};
 }
 
-Creature::Creature(std::size_t typeIndex, int currentStep)
-    : Creature{typeIndex, currentStep, creatureTypes[typeIndex].getLifetime()} {}
+Creature::Creature(std::uint8_t typeIndex, int currentStep)
+    : Creature{typeIndex, currentStep, creatureTypes[typeIndex].getMaxLifetime()} {}
 
-Creature::Creature(std::size_t typeIndex, int currentStep, int lifetime)
-    : typeIndex{typeIndex}, lifetime{lifetime}, timeOfLastProcreation{currentStep} {
+Creature::Creature(std::uint8_t typeIndex, int currentStep, std::int16_t lifetime)
+    : timeOfLastProcreation{currentStep}, lifetime{lifetime}, typeIndex{typeIndex} {
    // Offset the first time the creature can procreate by a random value.  Otherwise all
    // creatures of the same type tend to always produce offspring in the same step.
    int procInterval = getMaxLifetime() / 100;

@@ -191,7 +191,7 @@ void MainFrame::updateAttributes(std::size_t creatureIndex) {
    }
    *propertyEntries[0] << type.getStrength();
    *propertyEntries[1] << type.getSpeed();
-   *propertyEntries[2] << type.getLifetime();
+   *propertyEntries[2] << type.getMaxLifetime();
    std::string attributes = type.getAttributeString();
    std::replace(attributes.begin(), attributes.end(), ' ', '\n');
    attributeEntry->Clear();

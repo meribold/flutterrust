@@ -2,6 +2,7 @@
 #define CREATURE_TYPE_HPP_21UKGANC
 
 #include <bitset>
+#include <cstdint>  // int16_t
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -24,7 +25,7 @@ struct CreatureType {
    inline const std::string& getName() const;
    inline int getStrength() const;
    inline int getSpeed() const;
-   inline int getLifetime() const;
+   inline int16_t getMaxLifetime() const;
    inline std::string getAttributeString() const;
    inline const std::string& getBitmapName() const;
 
@@ -35,7 +36,7 @@ struct CreatureType {
    inline bool isHerbivore() const;
    inline bool isCarnivore() const;
 
-   using Tuple = std::tuple<std::string, int, int, int, CreatureAttrs, std::string>;
+   using Tuple = std::tuple<std::string, int, int, int16_t, CreatureAttrs, std::string>;
    Tuple tuple;
 
   private:
@@ -86,7 +87,9 @@ const std::string& CreatureType::getName() const {
 
 int CreatureType::getStrength() const { return std::get<cTFields::strength>(tuple); }
 int CreatureType::getSpeed() const { return std::get<cTFields::speed>(tuple); }
-int CreatureType::getLifetime() const { return std::get<cTFields::lifetime>(tuple); }
+int16_t CreatureType::getMaxLifetime() const {
+   return std::get<cTFields::lifetime>(tuple);
+}
 
 CreatureAttrs CreatureType::getAttributes() const {
    return std::get<cTFields::attributes>(tuple);
