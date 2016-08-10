@@ -612,7 +612,7 @@ std::vector<World::Pos> World::getReachablePositions(const World::Pos& start,
    bool onLand = isLand(start);
    // std::cerr << "Positions around " << start[0] << ", " << start[1] << ":\n";
    while (!frontier.empty()) {
-      const World::Pos& current = frontier.front().first;
+      const World::Pos current = frontier.front().first;
       int dist = frontier.front().second + 1;
       assert(dist <= maxDist);
       frontier.pop();
