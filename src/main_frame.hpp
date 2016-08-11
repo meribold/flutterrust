@@ -94,6 +94,7 @@ class MainFrame : public wxFrame {
 
    std::array<wxBitmap, 6> terrainBitmaps;
    std::vector<wxBitmap> creatureBitmaps;
+   wxBitmap carcassBitmap;
    wxBitmap pathBitmap;
 
    World world;

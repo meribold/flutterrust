@@ -40,12 +40,14 @@ constexpr std::uint16_t defaultRoamState = (numRoamStates - 1) / 2;
 }
 
 enum animalStates : std::uint16_t {
-   roam = 0,
-   procreate = numRoamStates,
+   roam = 0,  // Not actually a valid state.
+   procreate = animalStates::roam + numRoamStates,
    forage,
    consume,
    rest,
-   SIZE = animalStates::rest + 5
+   decompose = animalStates::rest + 5,
+   decomposed = animalStates::decompose + 10,
+   SIZE
 };
 
 constexpr std::uint16_t defaultAiState = defaultRoamState;
@@ -111,14 +113,28 @@ void World::step() {
          updateAnimal(it);
       }
       if (creature.lifetime <= 0) {
-         // TODO: if it's an animal, display the carcass graphic for 10 steps.
-         it = creatures.erase(it);
+         if (creature.isPlant()) {
+            it = creatures.erase(it);
+         } else {
+            killList.push_back(it);
+            ++it;
+         }
       } else {
          ++it;
       }
    }
-   // Move animals and insert new plants and animals into the hash map.
+
+   // Move animals, remove animals, and insert new plants and animals into the hash map.
    commitStep();
+
+   for (auto it = carcasses.begin(); it != carcasses.end();) {
+      if (--it->second == 0) {
+         it = carcasses.erase(it);
+      } else {
+         ++it;
+      }
+   }
+
 #ifdef DEBUG  // {{{1
    std::cerr << "Finished step " << currentStep << ": " << creatures.size()
              << " denizens\n";
@@ -146,6 +162,15 @@ void World::commitStep() {
    }
    moveeCache.clear();
 
+   // XXX: just erasing animals directly in the main loop in World::step() causes
+   // undefined behavior if we try to move the animal later.  TODO: just remove the animal
+   // from `moveeCache` as well, when removing it from `creatures`?
+   for (World::CreatureIt animalIt : killList) {
+      creatures.erase(animalIt);
+      carcasses[animalIt->first] = 10;  // Display the carcass graphic for 10 steps.
+   }
+   killList.clear();
+
    // Actually spawn any new offspring.  XXX: this absolutely has to be done after moving
    // creatures.
    for (auto& offspringInfo : offspringCache) {
@@ -168,7 +193,7 @@ void World::updatePlant(World::CreatureInfo& plantInfo) {
    age(plantInfo);
 }
 
-std::uint16_t World::getNewAiState(const World::CreatureInfo& animalInfo) const {
+std::uint16_t World::getNewAnimalState(const World::CreatureInfo& animalInfo) const {
    const World::Pos& pos = animalInfo.first;
    const Creature& animal = animalInfo.second;
    auto& state = animal.aiState;
@@ -191,21 +216,43 @@ std::uint16_t World::getNewAiState(const World::CreatureInfo& animalInfo) const 
          return animalStates::rest;
       }
       return state;  // Continue roaming.
-   } else if (state == animalStates::procreate) {
-      return animalStates::rest;  // TODO.
-   } else if (state == animalStates::forage) {
-      return animalStates::rest;  // TODO.
-   } else if (state == animalStates::consume) {
-      return animalStates::rest;  // TODO.
-   } else if (animalStates::rest <= state && state < animalStates::rest + 5) {
+   }
+   if (state == animalStates::procreate) {
+      return generateRoamState(animalInfo);
+   }
+   if (state == animalStates::forage) {
+      if (isFoodNearby(animalInfo, 1)) {
+         return animalStates::consume;
+      } else if (isFoodNearby(animalInfo, 10)) {
+         return animalStates::forage;
+      }
+      return generateRoamState(animalInfo);
+   }
+   if (state == animalStates::consume) {
+      if (animal.isSated()) {
+         return animalStates::rest;
+      }
+      if (isFoodNearby(animalInfo, 1)) {
+         return animalStates::consume;
+      }
+      if (isFoodNearby(animalInfo, 10)) {
+         return animalStates::forage;
+      }
+      return generateRoamState(animalInfo);
+   }
+   if (animalStates::rest <= state && state < animalStates::rest + 5) {
       if (state != animalStates::rest + 4) {
          return state + 1;  // Continue resting.
       } else {
          return generateRoamState(animalInfo);
       }
-   } else {
-      assert(false);
    }
+   /*
+   if (animalStates::decompose <= state && state < animalStates::decompose + 10) {
+      return state + 1;  // Keep it up.
+   }
+   */
+   assert(false);
 }
 
 void World::updateAnimal(World::CreatureIt animalIt) {
@@ -217,10 +264,10 @@ void World::updateAnimal(World::CreatureIt animalIt) {
    std::uint16_t oldState;
    do {
       oldState = state;
-      state = getNewAiState(*animalIt);
+      state = getNewAnimalState(*animalIt);
    } while (state != oldState);
    */
-   state = getNewAiState(*animalIt);
+   state = getNewAnimalState(*animalIt);
 
    // The first (numRoamStates - 1) states all indicate the animal is roaming.  The actual
    // value of aiState identifies the destination position relative to the animal's
@@ -236,9 +283,24 @@ void World::updateAnimal(World::CreatureIt animalIt) {
       std::cerr << "Consume.\n";
    } else if (animalStates::rest <= state && state < animalStates::rest + 5) {
       std::cerr << "Rest: " << state - animalStates::rest << '\n';
-   } else {
+      animal.lifetime -= 5;
+   }
+   /*
+   else if (animalStates::decompose <= state && state < animalStates::decompose + 10) {
+      // ...
+   } else if (state == animalStates::decomposed) {
+      // killList.push_back(animalIt);
+   }
+   */
+   else {
       assert(false);
    }
+
+   /*
+   if (animal.lifetime <= 0 && state < animalStates::decompose) {
+      state = animalStates::decompose;
+   }
+   */
 }
 
 bool World::isCached(std::int64_t x, std::int64_t y) const {
@@ -480,11 +542,12 @@ void World::roam(World::CreatureIt animalIt) {
    } else {
       const World::Pos dest = getRoamDest(*animalIt);
       if (!isCached(dest)) {
-         // The user scrolled and the position the animal was roaming towards is no longer
-         // cached.
+         // XXX: the user scrolled and the position the animal was roaming towards is no
+         // longer cached.
          animal.aiState = defaultRoamState;
+         animal.lifetime -= 5;
       } else {
-         const World::Pos newPos = moveTowards(animalIt, dest);
+         const World::Pos newPos = moveTowards(animalIt, dest, false);
          animal.aiState = offsetToRoamState(newPos, dest);
          assert(animal.aiState < numRoamStates);
       }
@@ -637,16 +700,21 @@ std::vector<World::Pos> World::getReachablePositions(const World::Pos& start,
    return positions;
 }
 
-World::Pos World::moveTowards(decltype(World::creatures)::iterator animalIt,
-                              const World::Pos& dest) {
+World::Pos World::moveTowards(CreatureIt animalIt, const World::Pos& dest, bool run) {
    assert(animalIt != creatures.end());
    const World::Pos& pos = animalIt->first;
-   const Creature& animal = animalIt->second;
+   Creature& animal = animalIt->second;
    assert(isGoodPosition(animal.getType(), dest));
-   std::size_t range = animal.getWalkSpeed();
+   std::size_t range = run ? animal.getRunSpeed() : animal.getWalkSpeed();
    assert(distance(pos, dest) <= maxRoamDist);
    const std::vector<Pos> path = getPath(pos, dest);
-   assert(path.size() <= maxRoamDist + 1);  // The path includes the current position.
+   auto distanceMoved = path.size() - 1;  // The path includes the current position.
+   assert(distanceMoved <= maxRoamDist);
+   if (run) {
+      animal.lifetime -= 10 * distanceMoved;
+   } else {
+      animal.lifetime -= 5 * distanceMoved;
+   }
    World::Pos newPos = range < path.size() ? path[range] : path.back();
    assert(distance(newPos, dest) <= maxRoamDist);
    moveeCache.push_back(std::make_pair(newPos, animalIt));

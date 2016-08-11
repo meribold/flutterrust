@@ -78,6 +78,10 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
          // creatures.
          creatureChoice->Append(creatureType.getName());
       }
+      // Load the bitmap used for carcasses.
+      filePath.SetFullName(u8"dead.tga");
+      carcassBitmap.LoadFile(filePath.GetFullPath());
+      // creatureBitmaps.emplace_back(filePath.GetFullPath());
    }
    // Load the graphic used to visualize paths for testing.
    {
@@ -273,6 +277,9 @@ void MainFrame::onPaint(wxPaintEvent&) {
          auto bitmapIndex = toUT(world.getTileType(worldX, worldY));
          assert(bitmapIndex < terrainBitmaps.size());
          dC.DrawBitmap(terrainBitmaps[bitmapIndex], drawOffsetX, drawOffsetY);
+         if (world.carcasses.find({worldX, worldY}) != world.carcasses.end()) {
+            dC.DrawBitmap(carcassBitmap, drawOffsetX, drawOffsetY);
+         }
          // Draw any creatures that are at {worldX, worldY}.
          auto range = world.creatures.equal_range({worldX, worldY});
          for (auto it = range.first; it != range.second; ++it) {
@@ -287,6 +294,10 @@ void MainFrame::onPaint(wxPaintEvent&) {
       ++worldY;
       drawOffsetY += tileSize;
    }
+
+   // for (const auto& pos : world.carcasses) {
+   //    dC.DrawBitmap(carcassBitmap, worldToPanelX(pos[0]), worldToPanelY(pos[1]));
+   // }
 
    for (const auto& pos : testPath) {
       dC.DrawBitmap(pathBitmap, worldToPanelX(pos[0]), worldToPanelY(pos[1]));

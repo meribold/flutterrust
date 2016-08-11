@@ -78,7 +78,7 @@ bool CreatureAttrs::isAquatic() const { return !bitset.test(0); }
 bool CreatureAttrs::isTerrestrial() const { return bitset.test(0); }
 bool CreatureAttrs::isPlant() const { return !bitset.test(1); }
 bool CreatureAttrs::isAnimal() const { return bitset.test(1); }
-bool CreatureAttrs::isHerbivore() const { return !bitset.test(2); }
+bool CreatureAttrs::isHerbivore() const { return isAnimal() && !bitset.test(2); }
 bool CreatureAttrs::isCarnivore() const { return bitset.test(2); }
 
 const std::string& CreatureType::getName() const {

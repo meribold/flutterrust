@@ -42,6 +42,7 @@ struct Creature {
 
    inline float getRelativeLifetime() const;
    inline bool isHungry() const;
+   inline bool isSated() const;
    inline int getWalkSpeed() const;
    inline int getRunSpeed() const;
    inline bool shouldProcreate(int step) const;
@@ -89,10 +90,12 @@ float Creature::getRelativeLifetime() const {
    return static_cast<float>(lifetime) / getMaxLifetime();
 }
 
-inline bool Creature::isHungry() const {
+bool Creature::isHungry() const {
    assert(isAnimal());
    return getRelativeLifetime() < 0.6;
 }
+
+bool Creature::isSated() const { return lifetime == getMaxLifetime(); }
 
 int Creature::getWalkSpeed() const { return getSpeed() / 20; }
 

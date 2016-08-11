@@ -5,7 +5,7 @@
 #include <cstddef>        // size_t
 #include <cstdint>        // int64_t, uint8_t
 #include <limits>         // numeric_limits
-#include <unordered_map>  // unordered_multimap
+#include <unordered_map>  // unordered_multimap, unordered_map
 #include <utility>        // std::pair
 #include <vector>         // vector
 
@@ -31,12 +31,15 @@ class World {
 
    using CreatureIt = decltype(creatures)::iterator;
 
+   // Saves the time until the carcass should disappear.
+   std::unordered_map<Pos, std::uint8_t, PosHash> carcasses;
+
    World();
 
    void step();
    void commitStep();
    void updatePlant(CreatureInfo&);
-   std::uint16_t getNewAiState(const CreatureInfo&) const;
+   std::uint16_t getNewAnimalState(const CreatureInfo&) const;
    void updateAnimal(CreatureIt);
 
    // The origin is the index pair (i, j) of the top-left terrain block that is cached.
@@ -103,7 +106,7 @@ class World {
    // excluded.  Uses breadth-first search.
    std::vector<Pos> getReachablePositions(const Pos& start, int maxDist) const;
 
-   Pos moveTowards(CreatureIt animalIt, const Pos& dest);
+   Pos moveTowards(CreatureIt animalIt, const Pos& dest, bool run);
 
   private:
    MapGenerator mapGen;
@@ -125,9 +128,10 @@ class World {
    // current step's loop over the hash map will have its body executed for the new
    // creature or not.
    std::vector<World::CreatureInfo> offspringCache;
-
    // Movee: one who is being moved, obviously.
    std::vector<std::pair<const Pos, CreatureIt>> moveeCache;
+   // ...
+   std::vector<CreatureIt> killList;
 
    int currentStep = 0;
 };
