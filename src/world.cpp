@@ -41,14 +41,6 @@ constexpr std::uint16_t defaultRoamState = (maxRoamState - 1) / 2;
 
 constexpr std::uint16_t defaultAiState = defaultRoamState;
 
-/*
-= (roamDivisor * roamDivisor - 1) / 2;
-= ((2 * maxRoamDist + 1) * (2 * maxRoamDist + 1) - 1) / 2
-= (4 * maxRoamDist * maxRoamDist + 4 * maxRoamDist + 1 - 1) / 2
-= (4 * maxRoamDist * maxRoamDist + 4 * maxRoamDist) / 2
-= 2 * (maxRoamDist * maxRoamDist + maxRoamDist)
-*/
-
 // Get where an animal is moving towards relative to its current position.  Determined by
 // the animal's AI state.
 std::array<int, 2> roamStateToOffset(std::uint16_t aiState) {
@@ -76,7 +68,7 @@ std::uint16_t offsetToRoamState(const World::Pos& start, const World::Pos& dest)
    return offsetToRoamState(offset);
 }
 
-// Get the position an animal is currently roaming towards;
+// Get the position an animal is currently roaming towards.
 World::Pos getRoamDest(const World::CreatureInfo& animalInfo) {
    const World::Pos& pos = animalInfo.first;
    const Creature& animal = animalInfo.second;
@@ -87,20 +79,6 @@ World::Pos getRoamDest(const World::CreatureInfo& animalInfo) {
    dest[1] += offset[1];
    return dest;
 }
-
-#ifdef DEBUG  // {{{1
-void printRoamDest(const World::CreatureInfo& animalInfo) {
-   const World::Pos& pos = animalInfo.first;
-   const Creature& animal = animalInfo.second;
-   int xOffset = animal.aiState % roamDivisor;
-   int yOffset = animal.aiState / roamDivisor;
-   xOffset -= maxRoamDist;
-   yOffset -= maxRoamDist;
-   const World::Pos dest{pos[0] + xOffset, pos[1] + yOffset};
-   std::cerr << "Roaming towards: (" << dest[0] << ", " << dest[1] << "); relative: ("
-             << xOffset << ", " << yOffset << ")\n";
-}
-#endif  // }}}1
 
 World::World() {}
 
@@ -165,17 +143,6 @@ void World::commitStep() {
       creatures.insert(offspringInfo);
    }
    offspringCache.clear();
-
-   /*
-   std::vector<World::CreatureInfo> test;
-   for (auto& moveeInfo : moveeCache) {
-      test.emplace(moveeInfo.first, moveeInfo.second->second);
-   }
-   moveeCache.clear();
-   for (auto& moveeInfo : test) {
-      test.emplace(moveeInfo.first, moveeInfo.second->second);
-   }
-   */
 }
 
 void World::updatePlant(World::CreatureInfo& plantInfo) {
@@ -184,7 +151,6 @@ void World::updatePlant(World::CreatureInfo& plantInfo) {
    int stepsSinceProcreating = currentStep - plant.timeOfLastProcreation;
    // TODO: extract this into a function in CreatureType?
    bool canGrow = stepsSinceProcreating >= plant.getMaxLifetime() / 100;
-   // bool canGrow = currentStep % (plant.getMaxLifetime() / 100) == 0;
    if (canGrow) {
       // Get the number of plants that have the same type within 5 tiles of the parent.
       int nearbyConspecificPlants = countCreatures(pos, 5, plant.getTypeIndex());
@@ -199,17 +165,14 @@ void World::updatePlant(World::CreatureInfo& plantInfo) {
 }
 
 void World::updateAnimal(World::CreatureIt animalIt) {
-   // const World::Pos& pos = animalIt->first;
    Creature& animal = animalIt->second;
    // The first maxRoamState states all indicate the animal is roaming.  The actual value
    // of aiState identifies the destination position relative to the animal's current
-   // position.  Technically, there are only 221 different positions with a distance of
-   // 10, but the math is easier this way.
+   // position.
    if (animal.aiState == defaultRoamState) {
       // We were roaming but reached the destination.  TODO: rest, unless hungry and close
       // to food.
       animal.aiState = generateRoamState(*animalIt);
-      // printRoamDest(*animalIt);
    }
    if (animal.aiState < maxRoamState) {
       roam(animalIt);
@@ -312,6 +275,17 @@ TileType World::getTileType(std::int64_t x, std::int64_t y) const {
    return terrainBlocks[blockIndex][i][j];
 }
 
+bool World::isVegetated(const World::Pos pos) const {
+   auto range = creatures.equal_range(pos);
+   for (auto it = range.first; it != range.second; ++it) {
+      if (it->second.isPlant()) {
+         // The tile is covered by vegetation.
+         return true;
+      }
+   }
+   return false;
+}
+
 bool World::isGoodPosition(const CreatureType& creatureType, World::Pos pos) const {
    assert(isCached(pos));
    const TileType tileType = getTileType(pos);
@@ -373,12 +347,8 @@ bool World::spawnOffspring(World::CreatureInfo& parentInfo) {
       if (!isGoodPosition(creatureType, childPos)) {
          return false;
       }
-      // TODO: extract this into a function `isVegetated(const World::Pos&)`?
-      auto range = creatures.equal_range(childPos);
-      for (auto it = range.first; it != range.second; ++it) {
-         if (it->second.isPlant()) {
-            return false;  // The tile is already covered by vegetation.
-         }
+      if (isVegetated(childPos)) {
+         return false;
       }
       offspringCache.push_back(
           CreatureInfo{childPos, Creature{parent.getTypeIndex(), currentStep}});
@@ -414,87 +384,28 @@ int World::getMovementCost(const World::Pos& pos, bool terrestrial) const {
 // Generate a random AI state corresponding to a position the animal can move to.
 std::uint16_t World::generateRoamState(const World::CreatureInfo& animalInfo) const {
    const World::Pos& pos = animalInfo.first;
-   const Creature& animal = animalInfo.second;
-   // TODO: exclude the animals current positions from the candidates?
+   // TODO: exclude the animal's current positions from the candidates?
    std::vector<World::Pos> positions = getReachablePositions(pos, 10);
    const World::Pos dest = positions[defaultRNDist(rNG) % positions.size()];
    assert(isCached(dest));
    // The path includes the current position.
    assert(getPath(pos, dest).size() <= maxRoamDist + 1);
    return offsetToRoamState(pos, dest);
-
-   /*
-   int xOffset = dest[0] - pos[0];
-   int yOffset = dest[1] - pos[1];
-   assert(-maxRoamDist <= xOffset && xOffset <= maxRoamDist);
-   assert(-maxRoamDist <= yOffset && yOffset <= maxRoamDist);
-   std::uint16_t roamState =
-       roamDivisor * (yOffset + maxRoamDist) + xOffset + maxRoamDist;
-   assert(roamState < maxRoamState);
-   return roamState;
-   */
-
-   /*
-   // Start by getting valid candidates.  TODO: exclude (0, 0)?  TODO: only include
-   // positions we can actually reach by moving 10 tiles.  E.g., not one that would
-   // require going around a huge body of water.
-   std::vector<decltype(animal.aiState)> candidates;
-   for (int yOffset = -10; yOffset <= 10; ++yOffset) {
-      for (int xOffset = -10; xOffset <= 10; ++xOffset) {
-         if (std::abs(xOffset) + std::abs(yOffset) > 10) {
-            continue;
-         }
-         World::Pos candidatePos{pos[0] + xOffset, pos[1] + yOffset};
-         if (!isCached(candidatePos)) {
-            continue;
-         }
-         if (!isGoodPosition(animal.getType(), candidatePos)) {
-            continue;
-         }
-         // FIXME: super inefficient!
-         if (getPath(pos, candidatePos).size() > 10) {
-            continue;
-         }
-         // TODO: extract this into a function.
-         candidates.push_back(roamDivisor * (yOffset + 10) + xOffset + 10);
-      }
-   }
-   return candidates[defaultRNDist(rNG) % candidates.size()];
-   */
-
-   /*
-   static std::uniform_int_distribution<int> rNDist{-10, 10};
-   int xOffset, yOffset;
-   do {
-      xOffset = rNDist(rNG);
-      yOffset = rNDist(rNG);
-   } while (std::abs(xOffset) + std::abs(yOffset) > 10);
-   animal.aiState = yOffset * roamDivisor + xOffset;
-   */
 }
 
 void World::roam(World::CreatureIt animalIt) {
    const World::Pos& pos = animalIt->first;
    Creature& animal = animalIt->second;
+   assert(isCached(pos));
    if (animal.aiState >= maxRoamState || animal.aiState == defaultRoamState) {
       // We don't have a destination.  Randomize one.
       animal.aiState = generateRoamState(*animalIt);
-      // printRoamDest(*animalIt);
    }
    assert(animal.aiState < maxRoamState);
    if (animal.aiState == defaultRoamState) {
       // TODO: we can't move anywhere?
    } else {
-      /*
-      int xOffset = animal.aiState % roamDivisor;  // xOffset is in the range [0, 20].
-      int yOffset = animal.aiState / roamDivisor;  // Ditto.
-      xOffset -= 10;                               // [-10, 10] now.
-      yOffset -= 10;                               // Ditto.
-      assert(xOffset != 0 || yOffset != 0);
-      const World::Pos dest{pos[0] + xOffset, pos[1] + yOffset};
-      */
       const World::Pos dest = getRoamDest(*animalIt);
-      // printRoamDest(*animalIt);
       if (!isCached(dest)) {
          // The user scrolled and the position the animal was roaming towards is no longer
          // cached.
@@ -502,11 +413,6 @@ void World::roam(World::CreatureIt animalIt) {
       } else {
          const World::Pos newPos = moveTowards(animalIt, dest);
          animal.aiState = offsetToRoamState(newPos, dest);
-         /*
-         xOffset = dest[0] - newPos[0];
-         yOffset = dest[1] - newPos[1];
-         animal.aiState = roamDivisor * (yOffset + 10) + xOffset + 10;
-         */
          assert(animal.aiState < maxRoamState);
       }
    }
@@ -518,6 +424,8 @@ void World::roam(World::CreatureIt animalIt) {
 // same priority; mayby implement that optimization.
 // [1]: http://redblobgames.com/pathfinding/a-star/introduction.html
 std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const {
+   assert(isCached(start));
+   assert(isCached(dest));
    using P3 = std::pair<int, World::Pos>;  // Priority-position pair.
    struct P3Compare {
       constexpr bool operator()(const P3& lhs, const P3& rhs) const {
@@ -592,7 +500,6 @@ std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const 
       current = closest;
    }
    std::vector<World::Pos> path;
-   // std::size_t index = posInfoMap[current].cost;
    path.push_back(current);
    while (current != start) {
       current = posInfoMap[current].previous;
@@ -609,14 +516,24 @@ std::vector<World::Pos> World::getReachablePositions(const World::Pos& start,
    std::queue<PosDistPair> frontier;
    frontier.emplace(start, 0);
    std::vector<World::Pos> positions{start};  // TODO: reserve some space.
-   const int arrayWidth = 2 * maxDist + 1;
-   std::unique_ptr<bool[]> visited(new bool[arrayWidth * arrayWidth]);
+   // Diameter of the square containing all positions that are potentially reachable
+   // without moving a distance greater than `maxDist`.
+   const int diameter = 2 * maxDist + 1;
+   // This should be the absolute maximum number of elements we may need.
+   positions.reserve(diameter * diameter - 1);
+   auto getIndex = [&](const World::Pos& pos) {
+      int i = pos[1] - start[1] + maxDist;
+      int j = pos[0] - start[0] + maxDist;
+      assert(0 <= i && i < diameter);
+      assert(0 <= j && j < diameter);
+      return diameter * i + j;
+   };
+   std::unique_ptr<bool[]> visited(new bool[diameter * diameter]);
    // Initialize the array by setting all elements to `false`.
-   std::fill_n(visited.get(), arrayWidth * arrayWidth, false);
+   std::fill_n(visited.get(), diameter * diameter, false);
    // Set the element corresponding to `start` to `true`;
-   visited[arrayWidth * maxDist + maxDist] = true;
+   visited[diameter * maxDist + maxDist] = true;
    bool onLand = isLand(start);
-   // std::cerr << "Positions around " << start[0] << ", " << start[1] << ":\n";
    while (!frontier.empty()) {
       const World::Pos current = frontier.front().first;
       int dist = frontier.front().second + 1;
@@ -629,29 +546,20 @@ std::vector<World::Pos> World::getReachablePositions(const World::Pos& start,
             continue;
          }
          assert(distance(current, next) == 1);
-         assert(visited[arrayWidth * (current[1] - start[1] + maxDist) + current[0] -
-                        start[0] + maxDist]);
-         assert(distance(start, next) <= maxDist);  // FIXME: sometimes fails; very
-                                                    // rarely; very strange.
-         int i = next[1] - start[1] + maxDist;
-         int j = next[0] - start[0] + maxDist;
-         assert(0 <= i);  // FIXME: sometimes fails.
-         assert(i < arrayWidth);
-         assert(0 <= j);
-         assert(j < arrayWidth);
-         bool& visitedNext = visited[arrayWidth * i + j];
+         assert(visited[getIndex(current)]);
+         assert(distance(start, next) <= maxDist);
+         bool& visitedNext = visited[getIndex(next)];
          if (visitedNext) {
             continue;
          }
-         assert(distance(start, next) <= dist);  // FIXME: sometimes fails.
+         assert(distance(start, next) <= dist);  // We can't get a path that's shorter
+                                                 // than the Manhattan distance.
          visitedNext = true;
          positions.push_back(next);
-         // std::cerr << "(" << next[0] << ", " << next[1] << ") [" << dist << "], ";
          if (dist != maxDist) {
             frontier.emplace(next, dist);
          }
       }
-      // std::cerr << '\n';
    }
    return positions;
 }
@@ -667,31 +575,11 @@ World::Pos World::moveTowards(decltype(World::creatures)::iterator animalIt,
    assert(distance(pos, dest) <= maxRoamDist);
    const std::vector<Pos> path = getPath(pos, dest);
    assert(path.size() <= maxRoamDist + 1);  // The path includes the current position.
-   World::Pos newPos;
-   if (range < path.size()) {
-#ifdef DEBUG
-      newPos = path.at(range);
-#else
-      newPos = path[range];
-#endif
-   } else {
-      newPos = path.back();
-   }
+   World::Pos newPos = range < path.size() ? path[range] : path.back();
    assert(distance(newPos, dest) <= maxRoamDist);
    moveeCache.push_back(std::make_pair(newPos, animalIt));
    return newPos;
 }
-
-/*
-decltype(World::creatures)::iterator World::getCreatures(const World::Pos& pos) {
-   return creatures.find(pos);
-}
-
-decltype(World::creatures)::const_iterator World::getCreatures(
-    const World::Pos& pos) const {
-   return creatures.find(pos);
-}
-*/
 
 // Map a signed integer number z to the interval [0, 2^n - 1].  Injective for the domain
 // [- 2^(n-1), 2^(n-1) - 1].

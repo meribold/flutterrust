@@ -58,7 +58,6 @@ class World {
    inline bool isLand(std::int64_t x, std::int64_t y) const;
    inline bool isLand(Pos) const;
 
-   // TODO.
    bool isVegetated(Pos) const;
 
    // Can a creature of the given type survive at the given position?  I.e., does the tile
@@ -102,10 +101,6 @@ class World {
    std::vector<Pos> getReachablePositions(const Pos& start, int maxDist) const;
 
    Pos moveTowards(CreatureIt animalIt, const Pos& dest);
-
-   // TODO getCreatureIterator()();
-   // decltype(creatures)::iterator getCreatures(const Pos&);
-   // decltype(creatures)::const_iterator getCreatures(const Pos&) const;
 
   private:
    MapGenerator mapGen;
