@@ -277,6 +277,7 @@ void MainFrame::onPaint(wxPaintEvent&) {
          auto bitmapIndex = toUT(world.getTileType(worldX, worldY));
          assert(bitmapIndex < terrainBitmaps.size());
          dC.DrawBitmap(terrainBitmaps[bitmapIndex], drawOffsetX, drawOffsetY);
+         // Draw any carcass that is at {worldX, worldY}.
          if (world.carcasses.find({worldX, worldY}) != world.carcasses.end()) {
             dC.DrawBitmap(carcassBitmap, drawOffsetX, drawOffsetY);
          }
@@ -294,10 +295,6 @@ void MainFrame::onPaint(wxPaintEvent&) {
       ++worldY;
       drawOffsetY += tileSize;
    }
-
-   // for (const auto& pos : world.carcasses) {
-   //    dC.DrawBitmap(carcassBitmap, worldToPanelX(pos[0]), worldToPanelY(pos[1]));
-   // }
 
    for (const auto& pos : testPath) {
       dC.DrawBitmap(pathBitmap, worldToPanelX(pos[0]), worldToPanelY(pos[1]));

@@ -45,9 +45,7 @@ enum animalStates : std::uint16_t {
    forage,
    consume,
    rest,
-   decompose = animalStates::rest + 5,
-   decomposed = animalStates::decompose + 10,
-   SIZE
+   SIZE = animalStates::rest + 5
 };
 
 constexpr std::uint16_t defaultAiState = defaultRoamState;
@@ -247,11 +245,6 @@ std::uint16_t World::getNewAnimalState(const World::CreatureInfo& animalInfo) co
          return generateRoamState(animalInfo);
       }
    }
-   /*
-   if (animalStates::decompose <= state && state < animalStates::decompose + 10) {
-      return state + 1;  // Keep it up.
-   }
-   */
    assert(false);
 }
 
@@ -259,14 +252,6 @@ void World::updateAnimal(World::CreatureIt animalIt) {
    Creature& animal = animalIt->second;
 
    auto& state = animal.aiState;
-   /*
-   // Allow multiple transitions.
-   std::uint16_t oldState;
-   do {
-      oldState = state;
-      state = getNewAnimalState(*animalIt);
-   } while (state != oldState);
-   */
    state = getNewAnimalState(*animalIt);
 
    // The first (numRoamStates - 1) states all indicate the animal is roaming.  The actual
@@ -285,22 +270,9 @@ void World::updateAnimal(World::CreatureIt animalIt) {
       std::cerr << "Rest: " << state - animalStates::rest << '\n';
       animal.lifetime -= 5;
    }
-   /*
-   else if (animalStates::decompose <= state && state < animalStates::decompose + 10) {
-      // ...
-   } else if (state == animalStates::decomposed) {
-      // killList.push_back(animalIt);
-   }
-   */
    else {
       assert(false);
    }
-
-   /*
-   if (animal.lifetime <= 0 && state < animalStates::decompose) {
-      state = animalStates::decompose;
-   }
-   */
 }
 
 bool World::isCached(std::int64_t x, std::int64_t y) const {
