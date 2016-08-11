@@ -495,14 +495,20 @@ void World::roam(World::CreatureIt animalIt) {
       */
       const World::Pos dest = getRoamDest(*animalIt);
       // printRoamDest(*animalIt);
-      const World::Pos newPos = moveTowards(animalIt, dest);
-      animal.aiState = offsetToRoamState(newPos, dest);
-      /*
-      xOffset = dest[0] - newPos[0];
-      yOffset = dest[1] - newPos[1];
-      animal.aiState = roamDivisor * (yOffset + 10) + xOffset + 10;
-      */
-      assert(animal.aiState < maxRoamState);
+      if (!isCached(dest)) {
+         // The user scrolled and the position the animal was roaming towards is no longer
+         // cached.
+         animal.aiState = defaultRoamState;
+      } else {
+         const World::Pos newPos = moveTowards(animalIt, dest);
+         animal.aiState = offsetToRoamState(newPos, dest);
+         /*
+         xOffset = dest[0] - newPos[0];
+         yOffset = dest[1] - newPos[1];
+         animal.aiState = roamDivisor * (yOffset + 10) + xOffset + 10;
+         */
+         assert(animal.aiState < maxRoamState);
+      }
    }
 }
 
