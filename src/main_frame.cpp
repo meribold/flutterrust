@@ -27,7 +27,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       topSizer{new wxBoxSizer{wxHORIZONTAL}},
       worldPanel{new wxPanel{topPanel}},
       worldPanelSizer{new wxBoxSizer{wxHORIZONTAL}},
-      controlsSizer{new wxStaticBoxSizer{wxVERTICAL, worldPanel, u8"Creature types"}},
+      controlsSizer{new wxStaticBoxSizer{wxVERTICAL, worldPanel, u8"Species"}},
       controlsBox{controlsSizer->GetStaticBox()},
       creatureChoice{new wxChoice{controlsBox, wxID_ANY}},
       propertyLabels{{new wxStaticText{controlsBox, wxID_ANY, u8"Strength"},
@@ -97,7 +97,7 @@ MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSiz
       editMenu->Append(myID_PLAY_PAUSE, "Un&pause\tSpace");
       menuBar->Append(editMenu, "&Edit");
       auto* viewMenu = new wxMenu{};
-      viewMenu->AppendCheckItem(myID_VIEW_CREATURES, "&Creature panel\tC");
+      viewMenu->AppendCheckItem(myID_VIEW_CREATURES, "&Species info\tS");
       menuBar->Append(viewMenu, "&View");
    }
    SetMenuBar(menuBar);

@@ -148,18 +148,13 @@ void World::commitStep() {
 void World::updatePlant(World::CreatureInfo& plantInfo) {
    const World::Pos& pos = plantInfo.first;
    Creature& plant = plantInfo.second;
-   int stepsSinceProcreating = currentStep - plant.timeOfLastProcreation;
-   // TODO: extract this into a function in CreatureType?
-   bool canGrow = stepsSinceProcreating >= plant.getMaxLifetime() / 100;
-   if (canGrow) {
+   if (plant.shouldProcreate(currentStep)) {
       // Get the number of plants that have the same type within 5 tiles of the parent.
       int nearbyConspecificPlants = countCreatures(pos, 5, plant.getTypeIndex());
       if (2 < nearbyConspecificPlants && nearbyConspecificPlants < 10) {
-         for (int i = 0; i < 2; ++i) {
-            spawnOffspring(plantInfo);
-         }
+         spawnOffspring(plantInfo);
+         spawnOffspring(plantInfo);
       }
-      plant.timeOfLastProcreation = currentStep;
    }
    age(plantInfo);
 }
@@ -322,7 +317,7 @@ int World::countCreatures(const World::Pos& pos, int radius,
 void World::spawnCreature(std::uint8_t typeIndex, std::int64_t x, std::int64_t y) {
    // Assert we don't try to place a creature on a hostile tile (e.g. a fish on land).
    assert(isGoodPosition(Creature::getTypes()[typeIndex], {x, y}));
-   creatures.emplace(Pos{x, y}, Creature{typeIndex, currentStep});
+   creatures.emplace(Pos{x, y}, Creature{typeIndex});
 }
 
 bool World::spawnOffspring(World::CreatureInfo& parentInfo) {
@@ -350,8 +345,7 @@ bool World::spawnOffspring(World::CreatureInfo& parentInfo) {
       if (isVegetated(childPos)) {
          return false;
       }
-      offspringCache.push_back(
-          CreatureInfo{childPos, Creature{parent.getTypeIndex(), currentStep}});
+      offspringCache.push_back(CreatureInfo{childPos, Creature{parent.getTypeIndex()}});
       return true;
    } else {
       return false;  // TODO.
@@ -570,8 +564,7 @@ World::Pos World::moveTowards(decltype(World::creatures)::iterator animalIt,
    const World::Pos& pos = animalIt->first;
    const Creature& animal = animalIt->second;
    assert(isGoodPosition(animal.getType(), dest));
-   // TODO: add a `getRange()` function in CreatureType?
-   std::size_t range = animal.getSpeed() / 20;
+   std::size_t range = animal.getWalkSpeed();
    assert(distance(pos, dest) <= maxRoamDist);
    const std::vector<Pos> path = getPath(pos, dest);
    assert(path.size() <= maxRoamDist + 1);  // The path includes the current position.
