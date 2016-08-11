@@ -32,19 +32,28 @@ constexpr int maxRoamDist = 40;
 constexpr int roamDivisor = 2 * maxRoamDist + 1;  // 81
 
 // The maximum AI state that indicates the animal is roaming.
-constexpr std::uint16_t maxRoamState = roamDivisor * roamDivisor;  // 6561
+constexpr std::uint16_t numRoamStates = roamDivisor * roamDivisor;  // 6561
 
 // AI state that indicates an animal is roaming but has reached its destination.  3280.
 // 3280 / 81 = 3280 % 81 = 40.
-constexpr std::uint16_t defaultRoamState = (maxRoamState - 1) / 2;
+constexpr std::uint16_t defaultRoamState = (numRoamStates - 1) / 2;
 }
+
+enum animalStates : std::uint16_t {
+   roam = 0,
+   procreate = numRoamStates,
+   forage,
+   consume,
+   rest,
+   SIZE = animalStates::rest + 5
+};
 
 constexpr std::uint16_t defaultAiState = defaultRoamState;
 
 // Get where an animal is moving towards relative to its current position.  Determined by
 // the animal's AI state.
 std::array<int, 2> roamStateToOffset(std::uint16_t aiState) {
-   assert(aiState < maxRoamState);
+   assert(aiState < numRoamStates);
    std::array<int, 2> offset;
    offset[0] = aiState % roamDivisor;
    offset[1] = aiState / roamDivisor;
@@ -58,7 +67,7 @@ std::uint16_t offsetToRoamState(const World::Pos& offset) {
    assert(std::abs(offset[0]) + std::abs(offset[1]) <= maxRoamDist);
    std::uint16_t roamState =
        roamDivisor * (offset[1] + maxRoamDist) + offset[0] + maxRoamDist;
-   assert(roamState < maxRoamState);
+   assert(roamState < numRoamStates);
    return roamState;
 }
 
@@ -72,7 +81,7 @@ std::uint16_t offsetToRoamState(const World::Pos& start, const World::Pos& dest)
 World::Pos getRoamDest(const World::CreatureInfo& animalInfo) {
    const World::Pos& pos = animalInfo.first;
    const Creature& animal = animalInfo.second;
-   assert(animal.aiState < maxRoamState);
+   assert(animal.aiState < numRoamStates);
    auto offset = roamStateToOffset(animal.aiState);
    World::Pos dest{pos};
    dest[0] += offset[0];
@@ -159,26 +168,76 @@ void World::updatePlant(World::CreatureInfo& plantInfo) {
    age(plantInfo);
 }
 
+std::uint16_t World::getNewAiState(const World::CreatureInfo& animalInfo) const {
+   const World::Pos& pos = animalInfo.first;
+   const Creature& animal = animalInfo.second;
+   auto& state = animal.aiState;
+   if (/* animalStates::roam <= state && */ state < numRoamStates) {
+      // The animal is currently roaming.  We can transition to: procreating, foraging /
+      // hunting, resting, or continue roaming.
+      if (animal.shouldProcreate(currentStep)) {
+         int nearbyConspecifics = countCreatures(pos, 3, animal.getTypeIndex());
+         if (1 < nearbyConspecifics && nearbyConspecifics < 5) {
+            return animalStates::procreate;
+         }
+      }
+      if (animal.isHungry()) {
+         if (isFoodNearby(animalInfo, 10)) {
+            return animalStates::forage;
+         }
+      }
+      if (state == defaultRoamState) {
+         // We were roaming but reached the destination.
+         return animalStates::rest;
+      }
+      return state;  // Continue roaming.
+   } else if (state == animalStates::procreate) {
+      return animalStates::rest;  // TODO.
+   } else if (state == animalStates::forage) {
+      return animalStates::rest;  // TODO.
+   } else if (state == animalStates::consume) {
+      return animalStates::rest;  // TODO.
+   } else if (animalStates::rest <= state && state < animalStates::rest + 5) {
+      if (state != animalStates::rest + 4) {
+         return state + 1;  // Continue resting.
+      } else {
+         return generateRoamState(animalInfo);
+      }
+   } else {
+      assert(false);
+   }
+}
+
 void World::updateAnimal(World::CreatureIt animalIt) {
    Creature& animal = animalIt->second;
-   // The first maxRoamState states all indicate the animal is roaming.  The actual value
-   // of aiState identifies the destination position relative to the animal's current
-   // position.
-   if (animal.aiState == defaultRoamState) {
-      // We were roaming but reached the destination.  TODO: rest, unless hungry and close
-      // to food.
-      animal.aiState = generateRoamState(*animalIt);
-   }
-   if (animal.aiState < maxRoamState) {
+
+   auto& state = animal.aiState;
+   /*
+   // Allow multiple transitions.
+   std::uint16_t oldState;
+   do {
+      oldState = state;
+      state = getNewAiState(*animalIt);
+   } while (state != oldState);
+   */
+   state = getNewAiState(*animalIt);
+
+   // The first (numRoamStates - 1) states all indicate the animal is roaming.  The actual
+   // value of aiState identifies the destination position relative to the animal's
+   // current position.
+   if (state < numRoamStates) {
+      std::cerr << "Roam.\n";
       roam(animalIt);
-   } else if (animal.aiState == maxRoamState) {
-      // TODO
-   }
-   // ...
-   // TODO
-   // ...
-   else {
-      // TODO.
+   } else if (state == animalStates::procreate) {
+      std::cerr << "Procreate.\n";
+   } else if (state == animalStates::forage) {
+      std::cerr << "Forage.\n";
+   } else if (state == animalStates::consume) {
+      std::cerr << "Consume.\n";
+   } else if (animalStates::rest <= state && state < animalStates::rest + 5) {
+      std::cerr << "Rest: " << state - animalStates::rest << '\n';
+   } else {
+      assert(false);
    }
 }
 
@@ -314,10 +373,33 @@ int World::countCreatures(const World::Pos& pos, int radius,
    return count;
 }
 
+bool World::isFoodNearby(const CreatureInfo& animalInfo, int radius) const {
+   const World::Pos& pos = animalInfo.first;
+   const Creature& animal = animalInfo.second;
+   assert(animal.isAnimal());
+   for (int xOffset = -radius; xOffset <= radius; ++xOffset) {
+      int maxYOffset = radius - std::abs(xOffset);
+      for (int yOffset = -maxYOffset; yOffset <= maxYOffset; ++yOffset) {
+         assert(std::abs(xOffset) + std::abs(yOffset) <= radius);
+         auto range = creatures.equal_range({pos[0] + xOffset, pos[1] + yOffset});
+         for (auto it = range.first; it != range.second; ++it) {
+            const auto& food = it->second;
+            if (animal.isHerbivore() && food.isPlant()) {
+               return true;
+            } else if (animal.isCarnivore() && food.isHerbivore()) {
+               return true;
+            }
+         }
+      }
+   }
+   return false;
+}
+
 void World::spawnCreature(std::uint8_t typeIndex, std::int64_t x, std::int64_t y) {
    // Assert we don't try to place a creature on a hostile tile (e.g. a fish on land).
    assert(isGoodPosition(Creature::getTypes()[typeIndex], {x, y}));
-   creatures.emplace(Pos{x, y}, Creature{typeIndex});
+   auto it = creatures.emplace(Pos{x, y}, Creature{typeIndex});
+   it->second.aiState = generateRoamState(*it);
 }
 
 bool World::spawnOffspring(World::CreatureInfo& parentInfo) {
@@ -378,7 +460,8 @@ int World::getMovementCost(const World::Pos& pos, bool terrestrial) const {
 // Generate a random AI state corresponding to a position the animal can move to.
 std::uint16_t World::generateRoamState(const World::CreatureInfo& animalInfo) const {
    const World::Pos& pos = animalInfo.first;
-   // TODO: exclude the animal's current positions from the candidates?
+   // TODO: exclude the animal's current positions from the candidates?  What if that's
+   // the only candidate?  It is the only one that is guaranteed.
    std::vector<World::Pos> positions = getReachablePositions(pos, 10);
    const World::Pos dest = positions[defaultRNDist(rNG) % positions.size()];
    assert(isCached(dest));
@@ -391,13 +474,9 @@ void World::roam(World::CreatureIt animalIt) {
    const World::Pos& pos = animalIt->first;
    Creature& animal = animalIt->second;
    assert(isCached(pos));
-   if (animal.aiState >= maxRoamState || animal.aiState == defaultRoamState) {
-      // We don't have a destination.  Randomize one.
-      animal.aiState = generateRoamState(*animalIt);
-   }
-   assert(animal.aiState < maxRoamState);
+   assert(animal.aiState < numRoamStates);
    if (animal.aiState == defaultRoamState) {
-      // TODO: we can't move anywhere?
+      // TODO: should we allow that this happens?  Maybe the animal can't move anywhere.
    } else {
       const World::Pos dest = getRoamDest(*animalIt);
       if (!isCached(dest)) {
@@ -407,7 +486,7 @@ void World::roam(World::CreatureIt animalIt) {
       } else {
          const World::Pos newPos = moveTowards(animalIt, dest);
          animal.aiState = offsetToRoamState(newPos, dest);
-         assert(animal.aiState < maxRoamState);
+         assert(animal.aiState < numRoamStates);
       }
    }
 }

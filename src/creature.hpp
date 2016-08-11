@@ -41,6 +41,7 @@ struct Creature {
    inline int getProcreationInterval() const;
 
    inline float getRelativeLifetime() const;
+   inline bool isHungry() const;
    inline int getWalkSpeed() const;
    inline int getRunSpeed() const;
    inline bool shouldProcreate(int step) const;
@@ -86,6 +87,11 @@ int Creature::getProcreationInterval() const {
 
 float Creature::getRelativeLifetime() const {
    return static_cast<float>(lifetime) / getMaxLifetime();
+}
+
+inline bool Creature::isHungry() const {
+   assert(isAnimal());
+   return getRelativeLifetime() < 0.6;
 }
 
 int Creature::getWalkSpeed() const { return getSpeed() / 20; }

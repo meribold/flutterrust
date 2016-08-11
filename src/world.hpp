@@ -36,6 +36,7 @@ class World {
    void step();
    void commitStep();
    void updatePlant(CreatureInfo&);
+   std::uint16_t getNewAiState(const CreatureInfo&) const;
    void updateAnimal(CreatureIt);
 
    // The origin is the index pair (i, j) of the top-left terrain block that is cached.
@@ -66,6 +67,8 @@ class World {
    bool isGoodPosition(const CreatureType&, std::int64_t x, std::int64_t y) const;
 
    int countCreatures(const Pos&, int radius, std::uint8_t creatureTypeIndex) const;
+
+   bool isFoodNearby(const CreatureInfo& animalInfo, int radius) const;
 
    // void spawnCreature(CreatureInfo&);
    void spawnCreature(std::uint8_t creatureType, std::int64_t x, std::int64_t y);
