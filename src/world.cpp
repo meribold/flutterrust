@@ -1,4 +1,4 @@
-#include <algorithm>      // std::fill_n
+#include <algorithm>      // std::fill_n, std::max, std::min
 #include <cassert>        // assert
 #include <climits>        // CHAR_BIT
 #include <cmath>          // pow, lround, abs
@@ -42,7 +42,7 @@ constexpr std::uint16_t defaultRoamState = (numRoamStates - 1) / 2;
 enum animalStates : std::uint16_t {
    roam = 0,  // Not actually a valid state.
    procreate = animalStates::roam + numRoamStates,
-   forage,
+   hunt,
    consume,
    rest,
    SIZE = animalStates::rest + 5
@@ -180,7 +180,7 @@ void World::commitStep() {
 void World::updatePlant(World::CreatureInfo& plantInfo) {
    const World::Pos& pos = plantInfo.first;
    Creature& plant = plantInfo.second;
-   if (plant.shouldProcreate(currentStep)) {
+   if (plant.canProcreate(currentStep)) {
       // Get the number of plants that have the same type within 5 tiles of the parent.
       int nearbyConspecificPlants = countCreatures(pos, 5, plant.getTypeIndex());
       if (2 < nearbyConspecificPlants && nearbyConspecificPlants < 10) {
@@ -191,55 +191,50 @@ void World::updatePlant(World::CreatureInfo& plantInfo) {
    age(plantInfo);
 }
 
-std::uint16_t World::getNewAnimalState(const World::CreatureInfo& animalInfo) const {
+std::uint16_t World::getNewAnimalState(const World::CreatureInfo& animalInfo) {
    const World::Pos& pos = animalInfo.first;
    const Creature& animal = animalInfo.second;
-   auto& state = animal.aiState;
-   if (/* animalStates::roam <= state && */ state < numRoamStates) {
-      // The animal is currently roaming.  We can transition to: procreating, foraging /
-      // hunting, resting, or continue roaming.
-      if (animal.shouldProcreate(currentStep)) {
+   auto state = animal.aiState;
+
+   bool roaming = /* animalStates::roam <= state && */ state < numRoamStates;
+   bool resting = animalStates::rest <= state && state < animalStates::rest + 5;
+   bool foraging = state == animalStates::hunt;
+   bool consuming = state == animalStates::consume;
+   bool procreated = state == animalStates::procreate;
+
+   if (roaming || resting) {
+      if (animal.canProcreate(currentStep)) {
          int nearbyConspecifics = countCreatures(pos, 3, animal.getTypeIndex());
          if (1 < nearbyConspecifics && nearbyConspecifics < 5) {
             return animalStates::procreate;
          }
       }
-      if (animal.isHungry()) {
-         if (isFoodNearby(animalInfo, 10)) {
-            return animalStates::forage;
-         }
+   }
+   if (((roaming || procreated) && animal.isHungry()) ||
+       ((foraging || consuming) && !animal.isSated())) {
+      if (isFoodNearby<1>(animalInfo)) {
+         return animalStates::consume;
+      } else if (isFoodNearby<10>(animalInfo)) {
+         return animalStates::hunt;
       }
-      if (state == defaultRoamState) {
-         // We were roaming but reached the destination.
-         return animalStates::rest;
-      }
+      // TODO: only call `isFoodNearby()` once per animal and step; cache the result.
+   }
+   if (roaming && state != defaultRoamState) {
       return state;  // Continue roaming.
    }
-   if (state == animalStates::procreate) {
+   if (procreated) {
       return generateRoamState(animalInfo);
    }
-   if (state == animalStates::forage) {
-      if (isFoodNearby(animalInfo, 1)) {
-         return animalStates::consume;
-      } else if (isFoodNearby(animalInfo, 10)) {
-         return animalStates::forage;
-      }
-      return generateRoamState(animalInfo);
+   if (state == defaultRoamState || foraging || consuming) {
+      // We were roaming but reached the destination.  Or we were foraging but there's no
+      // more food; maybe it died or got too far away.  Or we were eating something but
+      // are sated or there's no more food.
+      return animalStates::rest;
    }
-   if (state == animalStates::consume) {
-      if (animal.isSated()) {
-         return animalStates::rest;
-      }
-      if (isFoodNearby(animalInfo, 1)) {
-         return animalStates::consume;
-      }
-      if (isFoodNearby(animalInfo, 10)) {
-         return animalStates::forage;
-      }
-      return generateRoamState(animalInfo);
-   }
-   if (animalStates::rest <= state && state < animalStates::rest + 5) {
-      if (state != animalStates::rest + 4) {
+   if (resting) {
+      auto timeRested = 1 + state - animalStates::rest;
+      // if (state != animalStates::rest + 4) {
+      if (timeRested < std::lround(animal.getRelativeLifetime() * 5)) {
          return state + 1;  // Continue resting.
       } else {
          return generateRoamState(animalInfo);
@@ -258,21 +253,33 @@ void World::updateAnimal(World::CreatureIt animalIt) {
    // value of aiState identifies the destination position relative to the animal's
    // current position.
    if (state < numRoamStates) {
-      std::cerr << "Roam.\n";
+      // std::cerr << "Roam.\n";
       roam(animalIt);
    } else if (state == animalStates::procreate) {
-      std::cerr << "Procreate.\n";
-   } else if (state == animalStates::forage) {
-      std::cerr << "Forage.\n";
+      // std::cerr << "Procreate.\n";
+      assert(animal.procreationOffset == 0);
+      assert(animal.getRelativeLifetime() > 0.5);
+      if (spawnOffspring(*animalIt)) {
+         assert(animal.procreationOffset == animal.getProcreationInterval() - 1);
+      } else {
+         assert(animal.procreationOffset == 0);
+      }
+   } else if (state == animalStates::hunt) {
+      // std::cerr << "Hunt.\n";
+      hunt(animalIt);
    } else if (state == animalStates::consume) {
-      std::cerr << "Consume.\n";
+      // std::cerr << "Consume: ";
+      // std::cerr << animal.lifetime << " -> ";
+      leech(*animalIt);
+      // std::cerr << animal.lifetime  << '\n';
    } else if (animalStates::rest <= state && state < animalStates::rest + 5) {
-      std::cerr << "Rest: " << state - animalStates::rest << '\n';
+      // std::cerr << "Rest: " << state - animalStates::rest << '\n';
       animal.lifetime -= 5;
-   }
-   else {
+   } else {
       assert(false);
    }
+
+   if (animal.procreationOffset > 0) --animal.procreationOffset;
 }
 
 bool World::isCached(std::int64_t x, std::int64_t y) const {
@@ -407,6 +414,9 @@ int World::countCreatures(const World::Pos& pos, int radius,
    return count;
 }
 
+// FIXME: don't include positions that can't actually be reached; use
+// `getReachablePositions()`.
+/*
 bool World::isFoodNearby(const CreatureInfo& animalInfo, int radius) const {
    const World::Pos& pos = animalInfo.first;
    const Creature& animal = animalInfo.second;
@@ -427,6 +437,134 @@ bool World::isFoodNearby(const CreatureInfo& animalInfo, int radius) const {
       }
    }
    return false;
+}
+*/
+
+bool isPlant(World::CreatureIt creatureIt) { return creatureIt->second.isPlant(); }
+
+bool isHerbivore(World::CreatureIt creatureIt) {
+   return creatureIt->second.isHerbivore();
+}
+
+// Get information about all nearby creatures that can be reached from `start` without
+// moving a distance greater than `maxDist` for which the `UnaryPredicate` returns `true`
+// and that are at least as close to `start` as all other creatures satisfying the former
+// conditions.  E.g., find food.
+// TODO: is there an elegant way to provide a `const` version of this function that
+// returns an `std::vector<decltype(creatures)::const_iterator`?
+// TODO: specialize for `maxDist == 0` and `maxDist == 1`?
+template <int maxDist, typename UnaryPredicate>
+std::vector<World::CreatureIt> World::getReachableCreatures(const World::Pos& start,
+                                                            UnaryPredicate pred) {
+   std::vector<World::CreatureIt> matches;
+   auto range = creatures.equal_range(start);
+   for (auto it = range.first; it != range.second; ++it) {
+      if (pred(it)) {
+         matches.push_back(it);
+      }
+   }
+   if (!matches.empty()) return matches;
+
+   // This code is regrettably similar to but also curiously different from
+   // `World::getReachablePositions`.  TODO: DRY?
+   using PosDistPair = std::pair<World::Pos, int>;
+   std::queue<PosDistPair> frontier;
+   frontier.emplace(start, 0);
+   constexpr int diameter = 2 * maxDist + 1;
+   auto getIndex = [&](const World::Pos& pos) {
+      int i = pos[1] - start[1] + maxDist;
+      int j = pos[0] - start[0] + maxDist;
+      return diameter * i + j;
+   };
+   static bool visited[diameter * diameter];
+   std::fill_n(visited, diameter * diameter, false);
+   // Set the element corresponding to `start` to `true`;
+   visited[diameter * maxDist + maxDist] = true;
+   bool onLand = isLand(start);
+   int bestDist = maxDist;
+   while (!frontier.empty()) {
+      const World::Pos current = frontier.front().first;
+      int dist = frontier.front().second + 1;
+      // ...
+      if (dist > bestDist) break;
+      frontier.pop();
+      static constexpr World::Pos neighborOffsets[] = {{-1, 0}, {0, -1}, {0, 1}, {1, 0}};
+      for (const auto& offset : neighborOffsets) {
+         const World::Pos next{current[0] + offset[0], current[1] + offset[1]};
+         if (!isCached(next) || onLand != isLand(next)) {
+            continue;
+         }
+         bool& visitedNext = visited[getIndex(next)];
+         if (visitedNext) {
+            continue;
+         }
+         visitedNext = true;
+         auto range = creatures.equal_range(next);
+         for (auto it = range.first; it != range.second; ++it) {
+            if (pred(it)) {
+               // Gotcha.
+               matches.push_back(it);
+               bestDist = dist;
+            }
+         }
+         // We stop adding positions to `frontier` once we found any match, because we
+         // aren't interested in matches that are further away from `start` than others.
+         if (dist < bestDist) {
+            assert(matches.empty());
+            frontier.emplace(next, dist);
+         }
+      }
+   }
+   return matches;
+
+   /*
+   std::vector<World::Pos> positions = getReachablePositions(start, maxDist);
+   for (const World::Pos& pos : positions) {
+      auto range = creatures.equal_range(pos);
+      for (auto it = range.first; it != range.second; ++it) {
+         // ...
+      }
+   }
+   */
+}
+
+/*
+template <typename UnaryPredicate>
+std::vector<World::CreatureIt> World::getAdjacentCreatures(const World::Pos& start,
+                                                           UnaryPredicate pred) {
+   std::vector<World::CreatureIt> matches;
+   auto range = creatures.equal_range(start);
+   for (auto it = range.first; it != range.second; ++it) {
+      if (pred(it)) {
+         matches.push_back(it);
+      }
+   }
+   if (!matches.empty()) return matches;
+   bool onLand = isLand(start);
+   for (const auto& offset : World::Pos[]{{-1, 0}, {0, -1}, {0, 1}, {1, 0}}) {
+      if (!isCached(next) || onLand != isLand(next)) {
+         continue;
+      }
+      auto range = creatures.equal_range(next);
+      for (auto it = range.first; it != range.second; ++it) {
+         if (pred(it)) {
+            matches.push_back(it);
+         }
+      }
+   }
+}
+*/
+
+template <int maxDist>
+bool World::isFoodNearby(const CreatureInfo& animalInfo) {
+   const World::Pos& pos = animalInfo.first;
+   const Creature& animal = animalInfo.second;
+   assert(animal.isAnimal());
+   if (animal.isHerbivore()) {
+      return !getReachableCreatures<maxDist>(pos, &isPlant).empty();
+   } else {
+      return !getReachableCreatures<maxDist>(pos, &isHerbivore).empty();
+   }
 }
 
 void World::spawnCreature(std::uint8_t typeIndex, std::int64_t x, std::int64_t y) {
@@ -464,7 +602,20 @@ bool World::spawnOffspring(World::CreatureInfo& parentInfo) {
       offspringCache.push_back(CreatureInfo{childPos, Creature{parent.getTypeIndex()}});
       return true;
    } else {
-      return false;  // TODO.
+      // Get all positions the parent can reach without moving a distance greater than 3.
+      std::vector<World::Pos> positions = getReachablePositions(pos, 3);
+      if (positions.size() == 1) return false;  // There's no space.
+      assert(positions[0] == pos);
+      // Pick a random position other than the one of the parent.
+      World::Pos childPos = positions[1 + defaultRNDist(rNG) % (positions.size() - 1)];
+      assert(isGoodPosition(creatureType, childPos));
+      std::int16_t childLifetime = std::lround(0.5 * parent.lifetime);
+      offspringCache.push_back(
+          CreatureInfo{childPos, Creature{parent.getTypeIndex(), childLifetime}});
+      parent.lifetime = std::lround(0.75 * parent.lifetime);
+      // Reset the timer specifying when the animal can reproduce again.
+      parent.procreationOffset = parent.getProcreationInterval() - 1;
+      return true;
    }
 }
 
@@ -482,6 +633,28 @@ void World::age(CreatureInfo& creatureInfo) {
    } else {
       // TODO.
    }
+}
+
+void World::leech(Creature& actor, Creature& target) {
+   assert(actor.isAnimal());
+   actor.lifetime =
+       std::min(actor.lifetime + actor.getStrength() / 2, actor.getMaxLifetime());
+   target.lifetime -= actor.getStrength();
+}
+
+void World::leech(CreatureInfo& animalInfo) {
+   const World::Pos& pos = animalInfo.first;
+   Creature& actor = animalInfo.second;
+   assert(actor.isAnimal());
+   std::vector<CreatureIt> food;
+   if (actor.isHerbivore()) {
+      food = getReachableCreatures<1>(pos, &isPlant);
+   } else {
+      food = getReachableCreatures<1>(pos, &isHerbivore);
+   }
+   assert(!food.empty());
+   Creature& target = food[defaultRNDist(rNG) % (food.size())]->second;
+   leech(actor, target);
 }
 
 int World::getMovementCost(const World::Pos& pos, bool terrestrial) const {
@@ -524,6 +697,23 @@ void World::roam(World::CreatureIt animalIt) {
          assert(animal.aiState < numRoamStates);
       }
    }
+}
+
+void World::hunt(World::CreatureIt animalIt) {
+   const World::Pos& pos = animalIt->first;
+   const Creature& animal = animalIt->second;
+   assert(animal.isAnimal());
+   std::vector<CreatureIt> food;
+   if (animal.isHerbivore()) {
+      food = getReachableCreatures<10>(pos, &isPlant);
+   } else {
+      food = getReachableCreatures<10>(pos, &isHerbivore);
+   }
+   assert(!food.empty());
+   // Pick a random creature.
+   World::CreatureIt targetIt = food[defaultRNDist(rNG) % (food.size())];
+   const World::Pos& dest = targetIt->first;
+   moveTowards(animalIt, dest, true);
 }
 
 // Compute the shortest path from `start` to `dest` using the A* algorithm.  Based on
@@ -620,10 +810,10 @@ std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const 
 
 std::vector<World::Pos> World::getReachablePositions(const World::Pos& start,
                                                      int maxDist) const {
+   std::vector<World::Pos> positions{start};
    using PosDistPair = std::pair<World::Pos, int>;
    std::queue<PosDistPair> frontier;
    frontier.emplace(start, 0);
-   std::vector<World::Pos> positions{start};  // TODO: reserve some space.
    // Diameter of the square containing all positions that are potentially reachable
    // without moving a distance greater than `maxDist`.
    const int diameter = 2 * maxDist + 1;
@@ -685,7 +875,7 @@ World::Pos World::moveTowards(CreatureIt animalIt, const World::Pos& dest, bool 
    if (run) {
       animal.lifetime -= 10 * distanceMoved;
    } else {
-      animal.lifetime -= 5 * distanceMoved;
+      animal.lifetime -= 2 * distanceMoved;
    }
    World::Pos newPos = range < path.size() ? path[range] : path.back();
    assert(distance(newPos, dest) <= maxRoamDist);

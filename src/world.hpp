@@ -39,7 +39,7 @@ class World {
    void step();
    void commitStep();
    void updatePlant(CreatureInfo&);
-   std::uint16_t getNewAnimalState(const CreatureInfo&) const;
+   std::uint16_t getNewAnimalState(const CreatureInfo&);
    void updateAnimal(CreatureIt);
 
    // The origin is the index pair (i, j) of the top-left terrain block that is cached.
@@ -71,11 +71,14 @@ class World {
 
    int countCreatures(const Pos&, int radius, std::uint8_t creatureTypeIndex) const;
 
-   bool isFoodNearby(const CreatureInfo& animalInfo, int radius) const;
+   template <int maxDist, typename UnaryPredicate>
+   std::vector<CreatureIt> getReachableCreatures(const Pos& start, UnaryPredicate);
+
+   template <int maxDist>
+   bool isFoodNearby(const CreatureInfo& animalInfo);
 
    // void spawnCreature(CreatureInfo&);
    void spawnCreature(std::uint8_t creatureType, std::int64_t x, std::int64_t y);
-   // TODO:
    // void spawnPlant(CreatureInfo& parent);
    // void spawnAnimal(CreatureInfo& parent);
    bool spawnOffspring(CreatureInfo& parentInfo);
@@ -87,8 +90,8 @@ class World {
 
    void age(CreatureInfo&);
    void age(Creature&, int lifetime);
-   void leech(Creature& actor, Creature& target, int lifetime);
-   void procreate(Creature&);
+   void leech(Creature& actor, Creature& target);
+   void leech(CreatureInfo& actorInfo);
 
    int getMovementCost(const Pos&, bool onLand) const;
 
@@ -96,6 +99,8 @@ class World {
    std::uint16_t generateRoamState(const CreatureInfo&) const;
 
    void roam(CreatureIt animalIt);
+
+   void hunt(CreatureIt animalIt);
 
    // Get the shortest path from `start` to `dest` using the A* algorithm.
    std::vector<Pos> getPath(Pos start, Pos dest) const;

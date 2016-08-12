@@ -45,12 +45,17 @@ struct Creature {
    inline bool isSated() const;
    inline int getWalkSpeed() const;
    inline int getRunSpeed() const;
-   inline bool shouldProcreate(int step) const;
+   inline bool canProcreate(int step) const;
 
    std::uint16_t aiState = defaultAiState;
    std::int16_t lifetime;
    const std::uint8_t typeIndex;
-   const std::uint8_t procreationOffset;
+
+   // Plants can only reproduce when the simulations current step modulo their procreation
+   // interval is equal to `procreationOffset`.  That behavior doesn't model animals well,
+   // so this variable isn't actually an offset but a timer for them.  TODO: write `Plant`
+   // and `Animal` classes deriving from this one...
+   std::uint8_t procreationOffset;
 
   private:
    static std::vector<CreatureType> creatureTypes;
@@ -101,9 +106,14 @@ int Creature::getWalkSpeed() const { return getSpeed() / 20; }
 
 int Creature::getRunSpeed() const { return getSpeed() / 10; }
 
-bool Creature::shouldProcreate(int step) const {
-   return step % getProcreationInterval() == procreationOffset &&
-          (isPlant() || getRelativeLifetime() > 0.5);
+bool Creature::canProcreate(int step) const {
+   if (isPlant()) {
+      return step % getProcreationInterval() == procreationOffset;
+   } else {
+      return procreationOffset == 0 && getRelativeLifetime() > 0.5;
+   }
+   // return step % getProcreationInterval() == procreationOffset &&
+   //        (isPlant() || getRelativeLifetime() > 0.5);
 }
 
 #endif  // CREATURE_HPP_XZNFGDOY
