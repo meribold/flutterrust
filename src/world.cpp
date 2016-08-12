@@ -166,7 +166,9 @@ void World::commitStep() {
    // undefined behavior if we try to move the animal later.  TODO: just remove the animal
    // from `moveeCache` as well, when removing it from `creatures`?
    for (World::CreatureIt animalIt : killList) {
-      creatures.erase(animalIt);
+      creatures.erase(animalIt);  // FIXME: caused a segfault (SIGSEGV).  Maybe it's
+                                  // possible the same iterator is inserted into
+                                  // `killList` multiple times.
       carcasses[animalIt->first] = 10;  // Display the carcass graphic for 10 steps.
    }
    killList.clear();
