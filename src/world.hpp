@@ -9,14 +9,10 @@
 #include <utility>        // std::pair
 #include <vector>         // vector
 
-// #include <experimental/optional>
-
 #include "creature.hpp"
 #include "creature_type.hpp"
 #include "map_generator.hpp"
 #include "tile_type.hpp"
-
-// namespace ex9l = std::experimental;
 
 class World {
   public:
@@ -41,10 +37,6 @@ class World {
    void updatePlant(CreatureInfo&);
    std::uint16_t getNewAnimalState(const CreatureInfo&);
    void updateAnimal(CreatureIt);
-
-   // The origin is the index pair (i, j) of the top-left terrain block that is cached.
-   // void setOrigin(std::int64_t i, std::int64_t j);
-   // std::array<std::int64_t, 2> getOrigin();
 
    bool isCached(std::int64_t x, std::int64_t y) const;
    bool isCached(const Pos&) const;
@@ -82,11 +74,6 @@ class World {
    // void spawnPlant(CreatureInfo& parent);
    // void spawnAnimal(CreatureInfo& parent);
    bool spawnOffspring(CreatureInfo& parentInfo);
-
-   // ex9l::optional<CreatureInfo> getOffspring(CreatureInfo& parentInfo);
-   // TODO:
-   // CreatureInfo* spawnOffspring(CreatureInfo& parentInfo);
-   // CreatureInfo* spawnOffspring(CreatureInfo& parentInfo);
 
    void age(CreatureInfo&);
    void age(Creature&, int lifetime);

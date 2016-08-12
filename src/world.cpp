@@ -414,32 +414,6 @@ int World::countCreatures(const World::Pos& pos, int radius,
    return count;
 }
 
-// FIXME: don't include positions that can't actually be reached; use
-// `getReachablePositions()`.
-/*
-bool World::isFoodNearby(const CreatureInfo& animalInfo, int radius) const {
-   const World::Pos& pos = animalInfo.first;
-   const Creature& animal = animalInfo.second;
-   assert(animal.isAnimal());
-   for (int xOffset = -radius; xOffset <= radius; ++xOffset) {
-      int maxYOffset = radius - std::abs(xOffset);
-      for (int yOffset = -maxYOffset; yOffset <= maxYOffset; ++yOffset) {
-         assert(std::abs(xOffset) + std::abs(yOffset) <= radius);
-         auto range = creatures.equal_range({pos[0] + xOffset, pos[1] + yOffset});
-         for (auto it = range.first; it != range.second; ++it) {
-            const auto& food = it->second;
-            if (animal.isHerbivore() && food.isPlant()) {
-               return true;
-            } else if (animal.isCarnivore() && food.isHerbivore()) {
-               return true;
-            }
-         }
-      }
-   }
-   return false;
-}
-*/
-
 bool isPlant(World::CreatureIt creatureIt) { return creatureIt->second.isPlant(); }
 
 bool isHerbivore(World::CreatureIt creatureIt) {
@@ -516,16 +490,6 @@ std::vector<World::CreatureIt> World::getReachableCreatures(const World::Pos& st
       }
    }
    return matches;
-
-   /*
-   std::vector<World::Pos> positions = getReachablePositions(start, maxDist);
-   for (const World::Pos& pos : positions) {
-      auto range = creatures.equal_range(pos);
-      for (auto it = range.first; it != range.second; ++it) {
-         // ...
-      }
-   }
-   */
 }
 
 /*
@@ -678,9 +642,8 @@ std::uint16_t World::generateRoamState(const World::CreatureInfo& animalInfo) co
 }
 
 void World::roam(World::CreatureIt animalIt) {
-   const World::Pos& pos = animalIt->first;
    Creature& animal = animalIt->second;
-   assert(isCached(pos));
+   assert(isCached(animalIt->first));
    assert(animal.aiState < numRoamStates);
    if (animal.aiState == defaultRoamState) {
       // TODO: should we allow that this happens?  Maybe the animal can't move anywhere.
