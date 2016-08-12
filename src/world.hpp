@@ -81,8 +81,8 @@ class World {
 
    void age(CreatureInfo&);
    void age(Creature&, int lifetime);
-   void leech(Creature& actor, Creature& target);
-   void leech(CreatureInfo& actorInfo);
+   void leech(CreatureIt actorIt, CreatureIt targetIt);
+   void leech(CreatureIt actorIt);
 
    int getMovementCost(const Pos&, bool onLand) const;
 

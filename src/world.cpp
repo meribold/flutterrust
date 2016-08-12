@@ -114,6 +114,8 @@ void World::step() {
          if (creature.isPlant()) {
             it = creatures.erase(it);
          } else {
+            // TODO: just remove the animal from `moveeCache` if necessary and instantly
+            // erase it from the hash map.
             killList.push_back(it);
             ++it;
          }
@@ -283,7 +285,7 @@ void World::updateAnimal(World::CreatureIt animalIt) {
    } else if (state == animalStates::consume) {
       // std::cerr << "Consume: ";
       // std::cerr << animal.lifetime << " -> ";
-      leech(*animalIt);
+      leech(animalIt);
       // std::cerr << animal.lifetime  << '\n';
    } else if (animalStates::rest <= state && state < animalStates::rest + 5) {
       // std::cerr << "Rest: " << state - animalStates::rest << '\n';
@@ -633,34 +635,35 @@ void World::age(CreatureInfo& creatureInfo) {
    }
 }
 
-void World::leech(Creature& actor, Creature& target) {
+void World::leech(CreatureIt actorIt, CreatureIt targetIt) {
+   Creature& actor = actorIt->second;
+   Creature& target = targetIt->second;
    assert(actor.isAnimal());
-   if (target.lifetime <= 0) return;
+   // TODO: technically dead animals also should be instantly removed...
+   assert(target.lifetime > 0 || target.isAnimal());
    std::int16_t amount = std::min(
        {static_cast<std::int16_t>(actor.getStrength()), target.lifetime,
         static_cast<std::int16_t>(2 * (actor.getMaxLifetime() - actor.lifetime))});
    actor.lifetime += amount / 2;
    assert(actor.lifetime <= actor.getMaxLifetime());
    target.lifetime -= amount;
+   if (target.lifetime <= 0) {
+      if (target.isPlant()) {
+         creatures.erase(targetIt);
+      } else {
+         // TODO: just remove the animal from `moveeCache` if necessary and instantly
+         // erase it from the hash map.
+         killList.push_back(targetIt);
+      }
+   }
 }
 
-void World::leech(CreatureInfo& animalInfo) {
-   const World::Pos& pos = animalInfo.first;
-   Creature& actor = animalInfo.second;
+void World::leech(CreatureIt actorIt) {
+   Creature& actor = actorIt->second;
    assert(actor.isAnimal());
-   /*
-   std::vector<CreatureIt> food;
-   if (actor.isHerbivore()) {
-      food = getReachableCreatures<1>(pos, &isPlant);
-   } else {
-      food = getReachableCreatures<1>(pos, &isHerbivore);
-   }
-   assert(!food.empty());
-   Creature& target = food[defaultRNDist(rNG) % (food.size())]->second;
-   */
    assert(!foodCache.empty());
-   Creature& target = foodCache[defaultRNDist(rNG) % (foodCache.size())]->second;
-   leech(actor, target);
+   CreatureIt targetIt = foodCache[defaultRNDist(rNG) % (foodCache.size())];
+   leech(actorIt, targetIt);
 }
 
 int World::getMovementCost(const World::Pos& pos, bool terrestrial) const {
