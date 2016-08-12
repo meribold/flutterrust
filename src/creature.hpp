@@ -27,7 +27,7 @@ struct Creature {
    inline const std::string& getName() const;
    inline int getStrength() const;
    inline int getSpeed() const;
-   inline int getMaxLifetime() const;
+   inline std::int16_t getMaxLifetime() const;
    inline std::string getAttributeString() const;
    inline const std::string& getBitmapName() const;
 
@@ -69,7 +69,7 @@ const CreatureType& Creature::getType() const { return creatureTypes[getTypeInde
 const std::string& Creature::getName() const { return getType().getName(); }
 int Creature::getStrength() const { return getType().getStrength(); }
 int Creature::getSpeed() const { return getType().getSpeed(); }
-int Creature::getMaxLifetime() const { return getType().getMaxLifetime(); }
+std::int16_t Creature::getMaxLifetime() const { return getType().getMaxLifetime(); }
 std::string Creature::getAttributeString() const {
    return getType().getAttributeString();
 }

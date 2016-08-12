@@ -64,10 +64,14 @@ class World {
    int countCreatures(const Pos&, int radius, std::uint8_t creatureTypeIndex) const;
 
    template <int maxDist, typename UnaryPredicate>
-   std::vector<CreatureIt> getReachableCreatures(const Pos& start, UnaryPredicate);
+   std::vector<CreatureIt> getReachableCreatures(const Pos& start, UnaryPredicate,
+                                                 int& distanceToFood);
+
+   // template <int maxDist>
+   // bool isFoodNearby(const CreatureInfo& animalInfo);
 
    template <int maxDist>
-   bool isFoodNearby(const CreatureInfo& animalInfo);
+   std::vector<CreatureIt> findFood(const CreatureInfo& animalInfo, int& distanceToFood);
 
    // void spawnCreature(CreatureInfo&);
    void spawnCreature(std::uint8_t creatureType, std::int64_t x, std::int64_t y);
@@ -114,12 +118,15 @@ class World {
    std::int64_t top = std::numeric_limits<std::int64_t>::lowest();
    std::int64_t left = std::numeric_limits<std::int64_t>::lowest();
 
+   // ...
+   std::vector<CreatureIt> foodCache;
+
    // Used to cache all the offspring spawned in one step before it is inserted into the
    // hash map.  Directly inserting new creatures into the hash map can invalidate
    // iterators.  It also would probably depend on the insertee's position whether the
    // current step's loop over the hash map will have its body executed for the new
    // creature or not.
-   std::vector<World::CreatureInfo> offspringCache;
+   std::vector<CreatureInfo> offspringCache;
    // Movee: one who is being moved, obviously.
    std::vector<std::pair<const Pos, CreatureIt>> moveeCache;
    // ...

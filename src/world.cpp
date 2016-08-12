@@ -212,12 +212,25 @@ std::uint16_t World::getNewAnimalState(const World::CreatureInfo& animalInfo) {
    }
    if (((roaming || procreated) && animal.isHungry()) ||
        ((foraging || consuming) && !animal.isSated())) {
+      // Writes the travelling distance to the closest creature the animal can feed on to
+      // `distanceToFood`.  A list of the found creatures is temporarily cached in
+      // `foodCache`.
+      int distanceToFood;
+      foodCache = findFood<10>(animalInfo, distanceToFood);
+      if (!foodCache.empty()) {
+         if (distanceToFood <= 1) {
+            return animalStates::consume;
+         } else if (distanceToFood <= 10) {
+            return animalStates::hunt;
+         }
+      }
+      /*
       if (isFoodNearby<1>(animalInfo)) {
          return animalStates::consume;
       } else if (isFoodNearby<10>(animalInfo)) {
          return animalStates::hunt;
       }
-      // TODO: only call `isFoodNearby()` once per animal and step; cache the result.
+      */
    }
    if (roaming && state != defaultRoamState) {
       return state;  // Continue roaming.
@@ -429,7 +442,8 @@ bool isHerbivore(World::CreatureIt creatureIt) {
 // TODO: specialize for `maxDist == 0` and `maxDist == 1`?
 template <int maxDist, typename UnaryPredicate>
 std::vector<World::CreatureIt> World::getReachableCreatures(const World::Pos& start,
-                                                            UnaryPredicate pred) {
+                                                            UnaryPredicate pred,
+                                                            int& distanceToFood) {
    std::vector<World::CreatureIt> matches;
    auto range = creatures.equal_range(start);
    for (auto it = range.first; it != range.second; ++it) {
@@ -437,7 +451,10 @@ std::vector<World::CreatureIt> World::getReachableCreatures(const World::Pos& st
          matches.push_back(it);
       }
    }
-   if (!matches.empty()) return matches;
+   if (!matches.empty()) {
+      distanceToFood = 0;
+      return matches;
+   }
 
    // This code is regrettably similar to but also curiously different from
    // `World::getReachablePositions`.  TODO: DRY?
@@ -489,6 +506,7 @@ std::vector<World::CreatureIt> World::getReachableCreatures(const World::Pos& st
          }
       }
    }
+   distanceToFood = bestDist;
    return matches;
 }
 
@@ -519,6 +537,7 @@ std::vector<World::CreatureIt> World::getAdjacentCreatures(const World::Pos& sta
 }
 */
 
+/*
 template <int maxDist>
 bool World::isFoodNearby(const CreatureInfo& animalInfo) {
    const World::Pos& pos = animalInfo.first;
@@ -528,6 +547,21 @@ bool World::isFoodNearby(const CreatureInfo& animalInfo) {
       return !getReachableCreatures<maxDist>(pos, &isPlant).empty();
    } else {
       return !getReachableCreatures<maxDist>(pos, &isHerbivore).empty();
+   }
+}
+*/
+
+// TODO: ignore creatures that are technically dead but still around.
+template <int maxDist>
+std::vector<World::CreatureIt> World::findFood(const World::CreatureInfo& animalInfo,
+                                               int& distanceToFood) {
+   const World::Pos& pos = animalInfo.first;
+   const Creature& animal = animalInfo.second;
+   assert(animal.isAnimal());
+   if (animal.isHerbivore()) {
+      return getReachableCreatures<maxDist>(pos, &isPlant, distanceToFood);
+   } else {
+      return getReachableCreatures<maxDist>(pos, &isHerbivore, distanceToFood);
    }
 }
 
@@ -601,15 +635,20 @@ void World::age(CreatureInfo& creatureInfo) {
 
 void World::leech(Creature& actor, Creature& target) {
    assert(actor.isAnimal());
-   actor.lifetime =
-       std::min(actor.lifetime + actor.getStrength() / 2, actor.getMaxLifetime());
-   target.lifetime -= actor.getStrength();
+   if (target.lifetime <= 0) return;
+   std::int16_t amount = std::min(
+       {static_cast<std::int16_t>(actor.getStrength()), target.lifetime,
+        static_cast<std::int16_t>(2 * (actor.getMaxLifetime() - actor.lifetime))});
+   actor.lifetime += amount / 2;
+   assert(actor.lifetime <= actor.getMaxLifetime());
+   target.lifetime -= amount;
 }
 
 void World::leech(CreatureInfo& animalInfo) {
    const World::Pos& pos = animalInfo.first;
    Creature& actor = animalInfo.second;
    assert(actor.isAnimal());
+   /*
    std::vector<CreatureIt> food;
    if (actor.isHerbivore()) {
       food = getReachableCreatures<1>(pos, &isPlant);
@@ -618,6 +657,9 @@ void World::leech(CreatureInfo& animalInfo) {
    }
    assert(!food.empty());
    Creature& target = food[defaultRNDist(rNG) % (food.size())]->second;
+   */
+   assert(!foodCache.empty());
+   Creature& target = foodCache[defaultRNDist(rNG) % (foodCache.size())]->second;
    leech(actor, target);
 }
 
@@ -666,6 +708,7 @@ void World::hunt(World::CreatureIt animalIt) {
    const World::Pos& pos = animalIt->first;
    const Creature& animal = animalIt->second;
    assert(animal.isAnimal());
+   /*
    std::vector<CreatureIt> food;
    if (animal.isHerbivore()) {
       food = getReachableCreatures<10>(pos, &isPlant);
@@ -675,6 +718,10 @@ void World::hunt(World::CreatureIt animalIt) {
    assert(!food.empty());
    // Pick a random creature.
    World::CreatureIt targetIt = food[defaultRNDist(rNG) % (food.size())];
+   */
+   assert(!foodCache.empty());
+   // Pick a random creature.
+   World::CreatureIt targetIt = foodCache[defaultRNDist(rNG) % (foodCache.size())];
    const World::Pos& dest = targetIt->first;
    moveTowards(animalIt, dest, true);
 }
