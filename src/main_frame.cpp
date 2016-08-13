@@ -363,18 +363,13 @@ void MainFrame::onLeftDown(wxMouseEvent& event) {
 }
 
 // Process a wxEVT_MOUSE_CAPTURE_LOST; handling this event is mandatory for an application
-// that captures the mouse.  FIXME: this function doesn't do the correct thing when shift
-// was pressed when we captured the mouse.
+// that captures the mouse.
 void MainFrame::onCaptureLost(wxMouseCaptureLostEvent& event) {
-#ifdef DEBUG
    assert(!HasCapture());
-   bool didUnbind = Unbind(wxEVT_MOTION, &MainFrame::onMotion, this) &&
-                    Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
-   assert(didUnbind);
-#else
    Unbind(wxEVT_MOTION, &MainFrame::onMotion, this);
    Unbind(wxEVT_LEFT_UP, &MainFrame::onLeftUp, this);
-#endif
+   Unbind(wxEVT_MOTION, &MainFrame::onShiftMotion, this);
+   Unbind(wxEVT_LEFT_UP, &MainFrame::onShiftLeftUp, this);
    event.Skip();
 }
 
