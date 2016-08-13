@@ -323,7 +323,7 @@ void MainFrame::onCreatureChoice(wxCommandEvent& event) {
 }
 
 void MainFrame::onPlayPause(wxCommandEvent&) {
-   constexpr int interval = 1000;  // In milliseconds.
+   constexpr int interval = 250;  // In milliseconds.
    if (!stepTimer.IsRunning()) {
       menuBar->SetLabel(myID_PLAY_PAUSE, "&Pause\tSpace");
       step();
