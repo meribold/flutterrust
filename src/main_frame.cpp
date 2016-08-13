@@ -16,8 +16,14 @@
 #include "tuple_helpers.hpp"  // toUT
 
 #include <cassert>  // assert
+
 #ifdef DEBUG
+#include <chrono>
 #include <iostream>
+#endif
+
+#ifdef DEBUG
+namespace c4o = std::chrono;
 #endif
 
 MainFrame::MainFrame(const std::string& dataDir, const wxPoint& pos, const wxSize& size)
@@ -226,11 +232,15 @@ void MainFrame::toggleControlsBox(wxMouseEvent&) {
 
 // Process a wxEVT_PAINT event.
 void MainFrame::onPaint(wxPaintEvent&) {
+#ifdef DEBUG
+   auto startTime = c4o::high_resolution_clock::now();
+#endif
+
    wxAutoBufferedPaintDC dC{worldPanel};  // Prevents tearing.
    int panelWidth, panelHeight;
    dC.GetSize(&panelWidth, &panelHeight);
 
-   // TODO: only repaint the invalidated areas.
+   // TODO: only repaint the invalidated areas?
    /*
    // Get the regions specifying which parts of the window should be repainted.
    wxRegionIterator regIt(worldPanel->GetUpdateRegion());
@@ -299,6 +309,12 @@ void MainFrame::onPaint(wxPaintEvent&) {
    for (const auto& pos : testPath) {
       dC.DrawBitmap(pathBitmap, worldToPanelX(pos[0]), worldToPanelY(pos[1]));
    }
+
+#ifdef DEBUG
+   auto endTime = c4o::high_resolution_clock::now();
+   auto duration = c4o::duration_cast<c4o::milliseconds>(endTime - startTime).count();
+   std::cerr << "MainFrame::onPaint(): took " << duration << " ms\n";
+#endif
 }
 
 void MainFrame::onCreatureChoice(wxCommandEvent& event) {
@@ -491,8 +507,49 @@ wxRect MainFrame::getTileArea(int x, int y) const {
 }
 
 void MainFrame::step() {
+#ifdef DEBUG
+   auto startTime = c4o::high_resolution_clock::now();
+#endif
+
    world.step();
-   worldPanel->Refresh(false);  // FIXME: only refresh areas that changed.
+
+   /*
+   int foo = 0;
+   // TODO: similar to code in `onPaint`: DRY.
+   int panelWidth, panelHeight;
+   worldPanel->GetClientSize(&panelWidth, &panelHeight);
+   std::int64_t minWorldX;
+   if (scrollOffX >= 0) {
+      minWorldX = scrollOffX / tileSize;
+   } else {
+      minWorldX = (scrollOffX + 1) / tileSize - 1;
+   }
+   std::int64_t minWorldY;
+   if (scrollOffY >= 0) {
+      minWorldY = scrollOffY / tileSize;
+   } else {
+      minWorldY = (scrollOffY + 1) / tileSize - 1;
+   }
+   std::int64_t maxWorldX = minWorldX + (panelWidth + tileSize - 1) / tileSize;
+   std::int64_t maxWorldY = minWorldY + (panelHeight + tileSize - 1) / tileSize;
+   */
+   for (const auto& pos : world.changedPositions) {
+      // if (minWorldX <= pos[0] && pos[0] <= maxWorldX && minWorldY <= pos[1] &&
+      //     pos[1] <= maxWorldY) {
+      wxRect rect{worldToPanelX(pos[0]), worldToPanelY(pos[1]), tileSize, tileSize};
+      worldPanel->RefreshRect(rect, false);
+      // ++foo;
+      // }
+   }
+// std::cerr << foo << '\n';
+
+// Refresh(false);
+
+#ifdef DEBUG
+   auto endTime = c4o::high_resolution_clock::now();
+   auto duration = c4o::duration_cast<c4o::milliseconds>(endTime - startTime).count();
+   std::cerr << "MainFrame::step(): took " << duration << " ms\n";
+#endif
 }
 
 // Invalidate the area of all tiles corresponding to positions in testPath.  The

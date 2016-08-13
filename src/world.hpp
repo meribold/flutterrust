@@ -30,6 +30,9 @@ class World {
    // Saves the time until the carcass should disappear.
    std::unordered_map<Pos, std::uint8_t, PosHash> carcasses;
 
+   // Specifies positions the GUI should repaint.  Cleared at the start of each step.
+   std::vector<Pos> changedPositions;
+
    World();
 
    void step();

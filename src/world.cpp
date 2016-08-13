@@ -95,6 +95,7 @@ World::World() {}
 // TODO: return a list of positions the GUI should redraw.
 void World::step() {
    ++currentStep;
+   changedPositions.clear();
 #ifdef DEBUG  // {{{1
    std::cerr << "Step " << std::setfill('0') << std::setw(4) << currentStep << ": ";
 #endif  // }}}1
@@ -111,6 +112,7 @@ void World::step() {
          updateAnimal(it);
       }
       if (creature.lifetime <= 0) {
+         changedPositions.push_back(pos);
          if (creature.isPlant()) {
             it = creatures.erase(it);
          } else {
@@ -126,6 +128,7 @@ void World::step() {
 
    for (auto it = carcasses.begin(); it != carcasses.end();) {
       if (--it->second == 0) {
+         changedPositions.push_back(it->first);
          it = carcasses.erase(it);
       } else {
          ++it;
@@ -153,9 +156,11 @@ void World::commitStep() {
       // [2]: http://en.cppreference.com/w/cpp/container/unordered_multimap/rehash
       World::Pos pos{moveeInfo.first};
       Creature animal{moveeInfo.second->second};
-      // auto copy = moveeInfo;
-      creatures.erase(moveeInfo.second);  // FIXME.
-      // creatures.emplace(copy.first, copy.second->second);
+
+      changedPositions.push_back(moveeInfo.second->first);
+      changedPositions.push_back(pos);
+
+      creatures.erase(moveeInfo.second);
       creatures.emplace(pos, animal);
       assert(creatures.bucket_count() == bucketCount);
    }
@@ -165,6 +170,7 @@ void World::commitStep() {
    // creatures.
    for (auto& offspringInfo : offspringCache) {
       creatures.insert(offspringInfo);
+      changedPositions.push_back(offspringInfo.first);
    }
    offspringCache.clear();
 }
@@ -637,6 +643,7 @@ void World::leech(CreatureIt actorIt, CreatureIt targetIt) {
    assert(actor.lifetime <= actor.getMaxLifetime());
    target.lifetime -= amount;
    if (target.lifetime <= 0) {
+      changedPositions.push_back(targetIt->first);
       if (target.isPlant()) {
          creatures.erase(targetIt);
       } else {
