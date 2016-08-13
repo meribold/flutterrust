@@ -105,6 +105,10 @@ class World {
    Pos moveTowards(CreatureIt animalIt, const Pos& dest, bool run);
 
   private:
+   // Erase an animal from the hash map and, if necessary, from `moveeCache`.  Plants can
+   // just be removed with `std::unordered_multimap::erase()`.
+   CreatureIt removeAnimal(CreatureIt);
+
    MapGenerator mapGen;
    static constexpr std::int64_t terrainBlockSize = MapGenerator::blockSize;
    using TerrainBlock = MapGenerator::TerrainBlock;
@@ -127,10 +131,15 @@ class World {
    // current step's loop over the hash map will have its body executed for the new
    // creature or not.
    std::vector<CreatureInfo> offspringCache;
+
    // Movee: one who is being moved, obviously.
-   std::vector<std::pair<const Pos, CreatureIt>> moveeCache;
-   // ...
-   std::vector<CreatureIt> killList;
+   // std::unordered_multimap<Pos, CreatureIt, PosHash> moveeCache;
+
+   // There's no `operator<` for `CreatureIt`, I think, so this isn't possible.
+   // std::map<CreatureIt, const Pos> moveeCache;
+
+   // This requires linear searches...
+   std::vector<std::pair<Pos, CreatureIt>> moveeCache;
 
    int currentStep = 0;
 };

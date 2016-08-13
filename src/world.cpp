@@ -11,7 +11,8 @@
 #include <vector>         // vector
 
 #ifdef DEBUG
-#include <iostream>
+#include <iomanip>   // setfill, setw
+#include <iostream>  // cout, cerr
 #endif
 
 #include "world.hpp"
@@ -95,8 +96,7 @@ World::World() {}
 void World::step() {
    ++currentStep;
 #ifdef DEBUG  // {{{1
-   std::cerr << "Starting step " << currentStep << ": " << creatures.size()
-             << " denizens\n";
+   std::cerr << "Step " << std::setfill('0') << std::setw(4) << currentStep << ": ";
 #endif  // }}}1
    for (auto it = creatures.begin(); it != creatures.end();) {
       const World::Pos& pos = it->first;
@@ -114,10 +114,7 @@ void World::step() {
          if (creature.isPlant()) {
             it = creatures.erase(it);
          } else {
-            // TODO: just remove the animal from `moveeCache` if necessary and instantly
-            // erase it from the hash map.
-            killList.push_back(it);
-            ++it;
+            it = removeAnimal(it);
          }
       } else {
          ++it;
@@ -136,8 +133,7 @@ void World::step() {
    }
 
 #ifdef DEBUG  // {{{1
-   std::cerr << "Finished step " << currentStep << ": " << creatures.size()
-             << " denizens\n";
+   std::cerr << creatures.size() << " denizens\n";
 #endif  // }}}1
 }
 
@@ -155,23 +151,15 @@ void World::commitStep() {
       // increasing the number of elements should be safe.
       // [1]: http://en.cppreference.com/w/cpp/container/unordered_multimap/insert
       // [2]: http://en.cppreference.com/w/cpp/container/unordered_multimap/rehash
-      auto copy = moveeInfo;
-      creatures.erase(moveeInfo.second);
-      creatures.emplace(copy.first, copy.second->second);
+      World::Pos pos{moveeInfo.first};
+      Creature animal{moveeInfo.second->second};
+      // auto copy = moveeInfo;
+      creatures.erase(moveeInfo.second);  // FIXME.
+      // creatures.emplace(copy.first, copy.second->second);
+      creatures.emplace(pos, animal);
       assert(creatures.bucket_count() == bucketCount);
    }
    moveeCache.clear();
-
-   // XXX: just erasing animals directly in the main loop in World::step() causes
-   // undefined behavior if we try to move the animal later.  TODO: just remove the animal
-   // from `moveeCache` as well, when removing it from `creatures`?
-   for (World::CreatureIt animalIt : killList) {
-      creatures.erase(animalIt);  // FIXME: caused a segfault (SIGSEGV).  Maybe it's
-                                  // possible the same iterator is inserted into
-                                  // `killList` multiple times.
-      carcasses[animalIt->first] = 10;  // Display the carcass graphic for 10 steps.
-   }
-   killList.clear();
 
    // Actually spawn any new offspring.  XXX: this absolutely has to be done after moving
    // creatures.
@@ -641,8 +629,7 @@ void World::leech(CreatureIt actorIt, CreatureIt targetIt) {
    Creature& actor = actorIt->second;
    Creature& target = targetIt->second;
    assert(actor.isAnimal());
-   // TODO: technically dead animals also should be instantly removed...
-   assert(target.lifetime > 0 || target.isAnimal());
+   assert(target.lifetime > 0);
    std::int16_t amount = std::min(
        {static_cast<std::int16_t>(actor.getStrength()), target.lifetime,
         static_cast<std::int16_t>(2 * (actor.getMaxLifetime() - actor.lifetime))});
@@ -653,9 +640,7 @@ void World::leech(CreatureIt actorIt, CreatureIt targetIt) {
       if (target.isPlant()) {
          creatures.erase(targetIt);
       } else {
-         // TODO: just remove the animal from `moveeCache` if necessary and instantly
-         // erase it from the hash map.
-         killList.push_back(targetIt);
+         removeAnimal(targetIt);
       }
    }
 }
@@ -895,7 +880,41 @@ World::Pos World::moveTowards(CreatureIt animalIt, const World::Pos& dest, bool 
    World::Pos newPos = range < path.size() ? path[range] : path.back();
    assert(distance(newPos, dest) <= maxRoamDist);
    moveeCache.push_back(std::make_pair(newPos, animalIt));
+   // moveeCache.insert(std::make_pair(animalIt, newPos));
+   // moveeCache.insert(std::make_pair(newPos, animalIt));
    return newPos;
+}
+
+World::CreatureIt World::removeAnimal(World::CreatureIt animalIt) {
+   const World::Pos& pos = animalIt->first;
+   // const Creature& animal = animalIt->second;
+   assert(animalIt->second.isAnimal());
+   // ...
+   // auto range = moveeCache.equal_range(pos);
+   /*
+   auto moveeCacheIt = std::find(range.first, range.second, animalIt);
+   if (moveeCacheIt != moveeCache.end()) {
+      moveeCache.erase(moveeCacheIt);
+   }
+   */
+   /*
+   for (auto moveeCacheIt = range.first; moveeCacheIt != range.second; ++moveeCacheIt) {
+      if (moveeCacheIt->second == animalIt) {
+         moveeCache.erase(moveeCacheIt);
+      }
+   }
+   */
+   // FIXME: inefficient.
+   for (auto it = moveeCache.begin(); it != moveeCache.end();) {
+      if (it->second == animalIt) {
+         it = moveeCache.erase(it);
+      } else {
+         ++it;
+      }
+   }
+   // moveeCache.erase(animalIt);
+   carcasses[animalIt->first] = 10;  // Display the carcass graphic for 10 steps.
+   return creatures.erase(animalIt);
 }
 
 // Map a signed integer number z to the interval [0, 2^n - 1].  Injective for the domain
