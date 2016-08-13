@@ -563,7 +563,7 @@ bool World::spawnOffspring(World::CreatureInfo& parentInfo) {
    }
 }
 
-void World::leech(CreatureIt actorIt, CreatureIt targetIt) {
+void World::leech(World::CreatureIt actorIt, World::CreatureIt targetIt) {
    Creature& actor = actorIt->second;
    Creature& target = targetIt->second;
    assert(actor.isAnimal());
@@ -584,10 +584,15 @@ void World::leech(CreatureIt actorIt, CreatureIt targetIt) {
    }
 }
 
-void World::leech(CreatureIt actorIt) {
+void World::leech(World::CreatureIt actorIt) {
    assert(actorIt->second.isAnimal());
    assert(!foodCache.empty());
-   CreatureIt targetIt = foodCache[defaultRNDist(rNG) % (foodCache.size())];
+   World::CreatureIt targetIt;
+   if (foodCache.size() == 1)
+      // This is probably common enough to make it worth the optimization.
+      targetIt = foodCache[0];
+   else
+      targetIt = foodCache[defaultRNDist(rNG) % (foodCache.size())];
    assert(targetIt->second.lifetime > 0);
    leech(actorIt, targetIt);
 }
@@ -637,7 +642,12 @@ void World::hunt(World::CreatureIt animalIt) {
    assert(animalIt->second.isAnimal());
    assert(!foodCache.empty());
    // Pick a random creature.
-   World::CreatureIt targetIt = foodCache[defaultRNDist(rNG) % (foodCache.size())];
+   World::CreatureIt targetIt;
+   if (foodCache.size() == 1)
+      // This is probably common enough to make it worth the optimization.
+      targetIt = foodCache[0];
+   else
+      targetIt = foodCache[defaultRNDist(rNG) % (foodCache.size())];
    const World::Pos& dest = targetIt->first;
    moveTowards(animalIt, dest, true);
 }
@@ -788,7 +798,7 @@ std::vector<World::Pos> World::getReachablePositions(const World::Pos& start,
    return positions;
 }
 
-World::Pos World::moveTowards(CreatureIt animalIt, const World::Pos& dest, bool run) {
+World::Pos World::moveTowards(World::CreatureIt animalIt, const World::Pos& dest, bool run) {
    assert(animalIt != creatures.end());
    const World::Pos& pos = animalIt->first;
    Creature& animal = animalIt->second;
