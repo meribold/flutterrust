@@ -92,13 +92,12 @@ World::Pos getRoamDest(const World::CreatureInfo& animalInfo) {
 
 World::World() {}
 
-// TODO: return a list of positions the GUI should redraw.
 void World::step() {
    ++currentStep;
-   changedPositions.clear();
 #ifdef DEBUG  // {{{1
    std::cerr << "Step " << std::setfill('0') << std::setw(4) << currentStep << ": ";
 #endif  // }}}1
+   changedPositions.clear();
    for (auto it = creatures.begin(); it != creatures.end();) {
       const World::Pos& pos = it->first;
       if (!isCached(pos)) {
@@ -123,7 +122,7 @@ void World::step() {
       }
    }
 
-   // Move animals, remove animals, and insert new plants and animals into the hash map.
+   // Move animals and insert new plants and animals into the hash map.
    commitStep();
 
    for (auto it = carcasses.begin(); it != carcasses.end();) {
@@ -134,7 +133,6 @@ void World::step() {
          ++it;
       }
    }
-
 #ifdef DEBUG  // {{{1
    std::cerr << creatures.size() << " denizens\n";
 #endif  // }}}1
@@ -178,6 +176,7 @@ void World::commitStep() {
 void World::updatePlant(World::CreatureInfo& plantInfo) {
    const World::Pos& pos = plantInfo.first;
    Creature& plant = plantInfo.second;
+   assert(plant.isPlant());
    if (plant.canProcreate(currentStep)) {
       // Get the number of plants that have the same type within 5 tiles of the parent.
       int nearbyConspecificPlants = countCreatures(pos, 5, plant.getTypeIndex());
@@ -186,7 +185,13 @@ void World::updatePlant(World::CreatureInfo& plantInfo) {
          spawnOffspring(plantInfo);
       }
    }
-   age(plantInfo);
+   const TileType tileType = getTileType(pos);
+   if (tileType == TileType::water || tileType == TileType::sand ||
+       tileType == TileType::dirt) {
+      plant.lifetime -= 10;
+   } else {
+      plant.lifetime -= 25;
+   }
 }
 
 std::uint16_t World::getNewAnimalState(const World::CreatureInfo& animalInfo) {
@@ -222,13 +227,6 @@ std::uint16_t World::getNewAnimalState(const World::CreatureInfo& animalInfo) {
             return animalStates::hunt;
          }
       }
-      /*
-      if (isFoodNearby<1>(animalInfo)) {
-         return animalStates::consume;
-      } else if (isFoodNearby<10>(animalInfo)) {
-         return animalStates::hunt;
-      }
-      */
    }
    if (roaming && state != defaultRoamState) {
       return state;  // Continue roaming.
@@ -244,7 +242,6 @@ std::uint16_t World::getNewAnimalState(const World::CreatureInfo& animalInfo) {
    }
    if (resting) {
       auto timeRested = 1 + state - animalStates::rest;
-      // if (state != animalStates::rest + 4) {
       if (timeRested < std::lround(animal.getRelativeLifetime() * 5)) {
          return state + 1;  // Continue resting.
       } else {
@@ -252,6 +249,7 @@ std::uint16_t World::getNewAnimalState(const World::CreatureInfo& animalInfo) {
       }
    }
    assert(false);
+   return defaultAiState;
 }
 
 void World::updateAnimal(World::CreatureIt animalIt) {
@@ -264,10 +262,8 @@ void World::updateAnimal(World::CreatureIt animalIt) {
    // value of aiState identifies the destination position relative to the animal's
    // current position.
    if (state < numRoamStates) {
-      // std::cerr << "Roam.\n";
       roam(animalIt);
    } else if (state == animalStates::procreate) {
-      // std::cerr << "Procreate.\n";
       assert(animal.procreationOffset == 0);
       assert(animal.getRelativeLifetime() > 0.5);
       if (spawnOffspring(*animalIt)) {
@@ -276,15 +272,10 @@ void World::updateAnimal(World::CreatureIt animalIt) {
          assert(animal.procreationOffset == 0);
       }
    } else if (state == animalStates::hunt) {
-      // std::cerr << "Hunt.\n";
       hunt(animalIt);
    } else if (state == animalStates::consume) {
-      // std::cerr << "Consume: ";
-      // std::cerr << animal.lifetime << " -> ";
       leech(animalIt);
-      // std::cerr << animal.lifetime  << '\n';
    } else if (animalStates::rest <= state && state < animalStates::rest + 5) {
-      // std::cerr << "Rest: " << state - animalStates::rest << '\n';
       animal.lifetime -= 5;
    } else {
       assert(false);
@@ -385,8 +376,7 @@ bool World::isVegetated(const World::Pos pos) const {
    auto range = creatures.equal_range(pos);
    for (auto it = range.first; it != range.second; ++it) {
       if (it->second.isPlant()) {
-         // The tile is covered by vegetation.
-         return true;
+         return true;  // The tile is covered by vegetation.
       }
    }
    return false;
@@ -441,7 +431,7 @@ bool isHerbivore(World::CreatureIt creatureIt) {
 template <int maxDist, typename UnaryPredicate>
 std::vector<World::CreatureIt> World::getReachableCreatures(const World::Pos& start,
                                                             UnaryPredicate pred,
-                                                            int& distanceToFood) {
+                                                            int& bestDist) {
    std::vector<World::CreatureIt> matches;
    auto range = creatures.equal_range(start);
    for (auto it = range.first; it != range.second; ++it) {
@@ -450,9 +440,11 @@ std::vector<World::CreatureIt> World::getReachableCreatures(const World::Pos& st
       }
    }
    if (!matches.empty()) {
-      distanceToFood = 0;
+      bestDist = 0;
       return matches;
    }
+
+   bestDist = maxDist;
 
    // This code is regrettably similar to but also curiously different from
    // `World::getReachablePositions`.  TODO: DRY?
@@ -470,7 +462,6 @@ std::vector<World::CreatureIt> World::getReachableCreatures(const World::Pos& st
    // Set the element corresponding to `start` to `true`;
    visited[diameter * maxDist + maxDist] = true;
    bool onLand = isLand(start);
-   int bestDist = maxDist;
    while (!frontier.empty()) {
       const World::Pos current = frontier.front().first;
       int dist = frontier.front().second + 1;
@@ -504,52 +495,9 @@ std::vector<World::CreatureIt> World::getReachableCreatures(const World::Pos& st
          }
       }
    }
-   distanceToFood = bestDist;
    return matches;
 }
 
-/*
-template <typename UnaryPredicate>
-std::vector<World::CreatureIt> World::getAdjacentCreatures(const World::Pos& start,
-                                                           UnaryPredicate pred) {
-   std::vector<World::CreatureIt> matches;
-   auto range = creatures.equal_range(start);
-   for (auto it = range.first; it != range.second; ++it) {
-      if (pred(it)) {
-         matches.push_back(it);
-      }
-   }
-   if (!matches.empty()) return matches;
-   bool onLand = isLand(start);
-   for (const auto& offset : World::Pos[]{{-1, 0}, {0, -1}, {0, 1}, {1, 0}}) {
-      if (!isCached(next) || onLand != isLand(next)) {
-         continue;
-      }
-      auto range = creatures.equal_range(next);
-      for (auto it = range.first; it != range.second; ++it) {
-         if (pred(it)) {
-            matches.push_back(it);
-         }
-      }
-   }
-}
-*/
-
-/*
-template <int maxDist>
-bool World::isFoodNearby(const CreatureInfo& animalInfo) {
-   const World::Pos& pos = animalInfo.first;
-   const Creature& animal = animalInfo.second;
-   assert(animal.isAnimal());
-   if (animal.isHerbivore()) {
-      return !getReachableCreatures<maxDist>(pos, &isPlant).empty();
-   } else {
-      return !getReachableCreatures<maxDist>(pos, &isHerbivore).empty();
-   }
-}
-*/
-
-// TODO: ignore creatures that are technically dead but still around.
 template <int maxDist>
 std::vector<World::CreatureIt> World::findFood(const World::CreatureInfo& animalInfo,
                                                int& distanceToFood) {
@@ -615,22 +563,6 @@ bool World::spawnOffspring(World::CreatureInfo& parentInfo) {
    }
 }
 
-void World::age(CreatureInfo& creatureInfo) {
-   Creature& creature = creatureInfo.second;
-   if (creature.isPlant()) {
-      const World::Pos& pos = creatureInfo.first;
-      const TileType tileType = getTileType(pos);
-      if (tileType == TileType::water || tileType == TileType::sand ||
-          tileType == TileType::dirt) {
-         creature.lifetime -= 10;
-      } else {
-         creature.lifetime -= 25;
-      }
-   } else {
-      // TODO.
-   }
-}
-
 void World::leech(CreatureIt actorIt, CreatureIt targetIt) {
    Creature& actor = actorIt->second;
    Creature& target = targetIt->second;
@@ -653,10 +585,10 @@ void World::leech(CreatureIt actorIt, CreatureIt targetIt) {
 }
 
 void World::leech(CreatureIt actorIt) {
-   Creature& actor = actorIt->second;
-   assert(actor.isAnimal());
+   assert(actorIt->second.isAnimal());
    assert(!foodCache.empty());
    CreatureIt targetIt = foodCache[defaultRNDist(rNG) % (foodCache.size())];
+   assert(targetIt->second.lifetime > 0);
    leech(actorIt, targetIt);
 }
 
@@ -702,20 +634,7 @@ void World::roam(World::CreatureIt animalIt) {
 }
 
 void World::hunt(World::CreatureIt animalIt) {
-   const World::Pos& pos = animalIt->first;
-   const Creature& animal = animalIt->second;
-   assert(animal.isAnimal());
-   /*
-   std::vector<CreatureIt> food;
-   if (animal.isHerbivore()) {
-      food = getReachableCreatures<10>(pos, &isPlant);
-   } else {
-      food = getReachableCreatures<10>(pos, &isHerbivore);
-   }
-   assert(!food.empty());
-   // Pick a random creature.
-   World::CreatureIt targetIt = food[defaultRNDist(rNG) % (food.size())];
-   */
+   assert(animalIt->second.isAnimal());
    assert(!foodCache.empty());
    // Pick a random creature.
    World::CreatureIt targetIt = foodCache[defaultRNDist(rNG) % (foodCache.size())];
@@ -808,7 +727,7 @@ std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const 
    path.push_back(current);
    while (current != start) {
       current = posInfoMap[current].previous;
-      // FIXME: inefficient!!
+      // FIXME: inefficient!
       path.insert(path.begin(), current);
       // path.push_back(current);
    }
@@ -887,30 +806,11 @@ World::Pos World::moveTowards(CreatureIt animalIt, const World::Pos& dest, bool 
    World::Pos newPos = range < path.size() ? path[range] : path.back();
    assert(distance(newPos, dest) <= maxRoamDist);
    moveeCache.push_back(std::make_pair(newPos, animalIt));
-   // moveeCache.insert(std::make_pair(animalIt, newPos));
-   // moveeCache.insert(std::make_pair(newPos, animalIt));
    return newPos;
 }
 
 World::CreatureIt World::removeAnimal(World::CreatureIt animalIt) {
-   const World::Pos& pos = animalIt->first;
-   // const Creature& animal = animalIt->second;
    assert(animalIt->second.isAnimal());
-   // ...
-   // auto range = moveeCache.equal_range(pos);
-   /*
-   auto moveeCacheIt = std::find(range.first, range.second, animalIt);
-   if (moveeCacheIt != moveeCache.end()) {
-      moveeCache.erase(moveeCacheIt);
-   }
-   */
-   /*
-   for (auto moveeCacheIt = range.first; moveeCacheIt != range.second; ++moveeCacheIt) {
-      if (moveeCacheIt->second == animalIt) {
-         moveeCache.erase(moveeCacheIt);
-      }
-   }
-   */
    // FIXME: inefficient.
    for (auto it = moveeCache.begin(); it != moveeCache.end();) {
       if (it->second == animalIt) {
@@ -919,7 +819,6 @@ World::CreatureIt World::removeAnimal(World::CreatureIt animalIt) {
          ++it;
       }
    }
-   // moveeCache.erase(animalIt);
    carcasses[animalIt->first] = 10;  // Display the carcass graphic for 10 steps.
    return creatures.erase(animalIt);
 }

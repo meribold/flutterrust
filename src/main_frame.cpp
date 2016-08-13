@@ -507,49 +507,29 @@ wxRect MainFrame::getTileArea(int x, int y) const {
 }
 
 void MainFrame::step() {
-#ifdef DEBUG
+#ifdef DEBUG  // {{{1
    auto startTime = c4o::high_resolution_clock::now();
-#endif
+#endif  // }}}1
 
    world.step();
 
-   /*
-   int foo = 0;
-   // TODO: similar to code in `onPaint`: DRY.
-   int panelWidth, panelHeight;
-   worldPanel->GetClientSize(&panelWidth, &panelHeight);
-   std::int64_t minWorldX;
-   if (scrollOffX >= 0) {
-      minWorldX = scrollOffX / tileSize;
-   } else {
-      minWorldX = (scrollOffX + 1) / tileSize - 1;
-   }
-   std::int64_t minWorldY;
-   if (scrollOffY >= 0) {
-      minWorldY = scrollOffY / tileSize;
-   } else {
-      minWorldY = (scrollOffY + 1) / tileSize - 1;
-   }
-   std::int64_t maxWorldX = minWorldX + (panelWidth + tileSize - 1) / tileSize;
-   std::int64_t maxWorldY = minWorldY + (panelHeight + tileSize - 1) / tileSize;
-   */
+   // This is usually much slower than refreshing individual rectangles and ignoring areas
+   // that didn't change for certain.
+   // Refresh(false);
+
+   // Checking which positions actually map into the area visible in the GUI and only
+   // Calling `RefreshRect()` for those doesn't seem to improve performance.  I guess this
+   // is handled well somewhere down the graphics stack.
    for (const auto& pos : world.changedPositions) {
-      // if (minWorldX <= pos[0] && pos[0] <= maxWorldX && minWorldY <= pos[1] &&
-      //     pos[1] <= maxWorldY) {
       wxRect rect{worldToPanelX(pos[0]), worldToPanelY(pos[1]), tileSize, tileSize};
       worldPanel->RefreshRect(rect, false);
-      // ++foo;
-      // }
    }
-// std::cerr << foo << '\n';
 
-// Refresh(false);
-
-#ifdef DEBUG
+#ifdef DEBUG  // {{{1
    auto endTime = c4o::high_resolution_clock::now();
    auto duration = c4o::duration_cast<c4o::milliseconds>(endTime - startTime).count();
    std::cerr << "MainFrame::step(): took " << duration << " ms\n";
-#endif
+#endif  // }}}1
 }
 
 // Invalidate the area of all tiles corresponding to positions in testPath.  The
@@ -586,4 +566,4 @@ void MainFrame::onMenuItemSelected(wxCommandEvent& event) {
    event.Skip();
 }
 
-// vim: tw=90 sts=-1 sw=3 et
+// vim: tw=90 sts=-1 sw=3 et fdm=marker

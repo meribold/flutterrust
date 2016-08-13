@@ -70,20 +70,14 @@ class World {
    std::vector<CreatureIt> getReachableCreatures(const Pos& start, UnaryPredicate,
                                                  int& distanceToFood);
 
-   // template <int maxDist>
-   // bool isFoodNearby(const CreatureInfo& animalInfo);
-
    template <int maxDist>
    std::vector<CreatureIt> findFood(const CreatureInfo& animalInfo, int& distanceToFood);
 
-   // void spawnCreature(CreatureInfo&);
    void spawnCreature(std::uint8_t creatureType, std::int64_t x, std::int64_t y);
-   // void spawnPlant(CreatureInfo& parent);
-   // void spawnAnimal(CreatureInfo& parent);
+   // void spawnCreature(CreatureInfo&);
+
    bool spawnOffspring(CreatureInfo& parentInfo);
 
-   void age(CreatureInfo&);
-   void age(Creature&, int lifetime);
    void leech(CreatureIt actorIt, CreatureIt targetIt);
    void leech(CreatureIt actorIt);
 
@@ -135,14 +129,14 @@ class World {
    // creature or not.
    std::vector<CreatureInfo> offspringCache;
 
-   // Movee: one who is being moved, obviously.
+   // Movee: one who is being moved, obviously.  This requires linear searches.  TODO:
+   // come of with something better.
+   std::vector<std::pair<Pos, CreatureIt>> moveeCache;
+
    // std::unordered_multimap<Pos, CreatureIt, PosHash> moveeCache;
 
    // There's no `operator<` for `CreatureIt`, I think, so this isn't possible.
    // std::map<CreatureIt, const Pos> moveeCache;
-
-   // This requires linear searches...
-   std::vector<std::pair<Pos, CreatureIt>> moveeCache;
 
    int currentStep = 0;
 };
