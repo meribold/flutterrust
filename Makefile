@@ -64,9 +64,11 @@ endif
 subdirectory = $(patsubst %/Module.mk,%, \
    $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 
-# See section 7.2.3 'Variables for Specifying Commands' of the GNU Coding Standards.
-all_cppflags := $$($(WXCONFIG) --cppflags) $(CPPFLAGS)
-all_cxxflags := $$($(WXCONFIG) --cxxflags) $(CXXFLAGS) -c
+# See section 7.2.3 'Variables for Specifying Commands' of the GNU Coding Standards.  The
+# `sed` invocations are used to [suppress warnings][1] for code in wxWidgets headers.
+# [1]: http://stackoverflow.com/q/1867065
+all_cppflags := $$($(WXCONFIG) --cppflags | sed 's/-I/-isystem/g') $(CPPFLAGS)
+all_cxxflags := $$($(WXCONFIG) --cxxflags | sed 's/-I/-isystem/g') $(CXXFLAGS) -c
 all_ldflags  := $(LDFLAGS)
 all_ldlibs   := $(LDLIBS)
 all_arflags  := $(ARFLAGS)
