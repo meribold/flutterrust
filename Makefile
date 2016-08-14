@@ -69,6 +69,8 @@ subdirectory = $(patsubst %/Module.mk,%, \
 # [1]: http://stackoverflow.com/q/1867065
 all_cppflags := $(shell $(WXCONFIG) --cppflags | sed 's/-I/-isystem/g') $(CPPFLAGS)
 all_cxxflags := $(shell $(WXCONFIG) --cxxflags | sed 's/-I/-isystem/g') $(CXXFLAGS) -c
+# Remove options from `all_cxxflags` that are already in `all_cppflags`.
+all_cxxflags := $(filter-out $(all_cppflags),$(all_cxxflags))
 all_ldflags  := $(LDFLAGS)
 all_ldlibs   := $(LDLIBS)
 all_arflags  := $(ARFLAGS)
