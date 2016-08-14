@@ -285,6 +285,7 @@ void World::updateAnimal(World::CreatureIt animalIt) {
 }
 
 bool World::isCached(std::int64_t x, std::int64_t y) const {
+   // TODO: `right` and `bottom` data members.
    return (left <= x && x < left + 2 * terrainBlockSize && top <= y &&
            y < top + 2 * terrainBlockSize);
 }
@@ -649,13 +650,14 @@ void World::hunt(World::CreatureIt animalIt) {
    else
       targetIt = foodCache[defaultRNDist(rNG) % (foodCache.size())];
    const World::Pos& dest = targetIt->first;
+   // FIXME: we almost already computed the path when we built `foodCache`...
    moveTowards(animalIt, dest, true);
 }
 
 // Compute the shortest path from `start` to `dest` using the A* algorithm.  Based on
 // [this introduction][1].  TODO: based on the demos, I think the linked page uses the
 // estimated distance to the destination as a tiebreaker when multiple positions have the
-// same priority; mayby implement that optimization.
+// same priority; maybe implement that optimization.
 // [1]: http://redblobgames.com/pathfinding/a-star/introduction.html
 std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const {
    assert(isCached(start));
@@ -728,18 +730,17 @@ std::vector<World::Pos> World::getPath(World::Pos start, World::Pos dest) const 
       }
    }
 
-   // Construct the path by going backwards from the destination (or the closest position
-   // to the destination).
    if (current != dest) {
       current = closest;
    }
+
+   // Construct the path by going backwards from the destination (or the closest position
+   // to the destination).  XXX: the vector we return is reversed.
    std::vector<World::Pos> path;
    path.push_back(current);
    while (current != start) {
       current = posInfoMap[current].previous;
-      // FIXME: inefficient!
-      path.insert(path.begin(), current);
-      // path.push_back(current);
+      path.push_back(current);
    }
    return path;
 }
@@ -806,14 +807,15 @@ World::Pos World::moveTowards(World::CreatureIt animalIt, const World::Pos& dest
    std::size_t range = run ? animal.getRunSpeed() : animal.getWalkSpeed();
    assert(distance(pos, dest) <= maxRoamDist);
    const std::vector<Pos> path = getPath(pos, dest);
-   auto distanceMoved = path.size() - 1;  // The path includes the current position.
+   // The path includes the current position.
+   auto distanceMoved = std::min(range, path.size() - 1);
    assert(distanceMoved <= maxRoamDist);
    if (run) {
       animal.lifetime -= 10 * distanceMoved;
    } else {
       animal.lifetime -= 2 * distanceMoved;
    }
-   World::Pos newPos = range < path.size() ? path[range] : path.back();
+   World::Pos newPos = *(path.rbegin() + distanceMoved);
    assert(distance(newPos, dest) <= maxRoamDist);
    moveeCache.push_back(std::make_pair(newPos, animalIt));
    return newPos;
