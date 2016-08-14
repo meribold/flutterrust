@@ -65,16 +65,20 @@ endif
 subdirectory = $(patsubst %/Module.mk,%, \
    $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST)))
 
-# See section 7.2.3 'Variables for Specifying Commands' of the GNU Coding Standards.  The
-# `sed` invocations are used to [suppress warnings][1] for code in wxWidgets headers.
-# [1]: http://stackoverflow.com/q/1867065
-all_cppflags := $(shell $(WXCONFIG) --cppflags | sed 's/-I/-isystem/g') $(CPPFLAGS)
-all_cxxflags := $(shell $(WXCONFIG) --cxxflags | sed 's/-I/-isystem/g') $(CXXFLAGS) -c
-# Remove options from `all_cxxflags` that are already in `all_cppflags`.
-all_cxxflags := $(filter-out $(all_cppflags),$(all_cxxflags))
-all_ldflags  := $(LDFLAGS)
-all_ldlibs   := $(LDLIBS)
-all_arflags  := $(ARFLAGS)
+# Was any goal (other than `clean`) specified on the command line?  None counts as `all`.
+ifneq ($(filter-out clean,$(or $(MAKECMDGOALS),all)),)
+   # See section 7.2.3 'Variables for Specifying Commands' of the GNU Coding Standards.
+   # The `sed` invocations are used to [suppress warnings][1] for code in wxWidgets
+   # headers.
+   # [1]: http://stackoverflow.com/q/1867065
+   all_cppflags := $(shell $(WXCONFIG) --cppflags | sed 's/-I/-isystem/g') $(CPPFLAGS)
+   all_cxxflags := $(shell $(WXCONFIG) --cxxflags | sed 's/-I/-isystem/g') $(CXXFLAGS) -c
+   # Remove options from `all_cxxflags` that are already in `all_cppflags`.
+   all_cxxflags := $(filter-out $(all_cppflags),$(all_cxxflags))
+   all_ldflags  := $(LDFLAGS)
+   all_ldlibs   := $(LDLIBS)
+   all_arflags  := $(ARFLAGS)
+endif
 
 # Explicitly initialize as simple variables as recursive ones are the default.
 sources   :=
@@ -89,14 +93,13 @@ include $(shell find -name 'Module.mk')
 prereq_files := $(addprefix $(OBJDIR)/,$(subst src/,,$(sources:.cpp=.d)))
 objects      := $(addprefix $(OBJDIR)/,$(subst src/,,$(sources:.cpp=.o)))
 
-# All whitespace-separated words in the working directory and its subdirectories that do
-# match any of the pattern words $(prereq_files).  File names shall not contain the "%"
-# character.
-existent_prereqs := \
-   $(filter $(prereq_files),$(shell find -regex '.*\.d$$' -printf '%P\n'))
-
-# Was any goal (other than `clean`) specified on the command line?  None counts as `all`.
 ifneq ($(filter-out clean,$(or $(MAKECMDGOALS),all)),)
+   # All whitespace-separated words in the working directory and its subdirectories that
+   # do match any of the pattern words $(prereq_files).  File names shall not contain the
+   # "%" character.
+   existent_prereqs := \
+      $(filter $(prereq_files),$(shell find -regex '.*\.d$$' -printf '%P\n'))
+
    # Include existent makefiles of prerequisites.  After reading in all those files none
    # of them will have to be updated.  Non-existent prerequisite files will be build along
    # with their respective object files.
