@@ -22,7 +22,6 @@ CXX       ?= g++
 WXCONFIG  ?= wx-config
 ICUCONFIG ?= icu-config
 CPPFLAGS  += -Wall -Wextra -pedantic
-# wxWidgets' uses old-style casts, so I need to disable the warnings about them.
 CXXFLAGS  += -std=c++14
 LDFLAGS   +=
 LDLIBS    +=
@@ -30,17 +29,32 @@ ARFLAGS   += cs
 
 ##########################################################################################
 
+ifeq ($(CXX), clang++)
+   CPPFLAGS += -Wno-missing-braces
+endif
+
 # Default is release build so users can do a normal make.
 DEBUG ?= 0
 ifeq ($(DEBUG), 0)
    CPPFLAGS := -DNDEBUG $(CPPFLAGS)
-   CXXFLAGS := -O3 -flto $(CXXFLAGS)
-   LDFLAGS := -O3 -flto -fuse-linker-plugin $(LDFLAGS)
+   ifeq ($(CXX), g++)
+      CXXFLAGS := -O3 -flto $(CXXFLAGS)
+      LDFLAGS := -O3 -flto -fuse-linker-plugin $(LDFLAGS)
+   else ifeq ($(CXX), clang++)
+      # There are strange linker errors when I use any level of optimization with Clang...
+      CXXFLAGS := $(CXXFLAGS)
+      LDFLAGS := $(LDFLAGS)
+   endif
    OBJDIR := build/release
 else
    CPPFLAGS := -DDEBUG $(CPPFLAGS)
-   CXXFLAGS := -g -Og $(CXXFLAGS)
-   LDFLAGS := -g -Og $(LDFLAGS)
+   ifeq ($(CXX), g++)
+      CXXFLAGS := -g -Og $(CXXFLAGS)
+      LDFLAGS := -g -Og $(LDFLAGS)
+   else
+      CXXFLAGS := -g $(CXXFLAGS)
+      LDFLAGS := -g $(LDFLAGS)
+   endif
    OBJDIR := build/debug
 endif
 # http://stackoverflow.com/q/1079832

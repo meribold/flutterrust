@@ -839,8 +839,8 @@ template <std::size_t n, typename Z>
 inline std::size_t toNBits(Z z) {
    // Signed, because using an unsigned type in operations with signed ones can cause the
    // signed operand to be converted to an unsigned type ("usual arithmetic conversions").
-   constexpr Z addend = std::pow(2, n - 1);
-   constexpr Z divisor = std::pow(2, n);
+   constexpr Z addend = Z{1} << (n - 1);  // 2^(n-1)
+   constexpr Z divisor = Z{1} << n;  // 2^n
    // C++ defines the modulo operation's result to have the same sign as the divident.
    // E.g., `(-128) % 129 == -128`.
    // return (((z + addend) % divisor) + divisor) % divisor;

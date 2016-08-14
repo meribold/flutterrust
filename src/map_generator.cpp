@@ -133,7 +133,7 @@ MapGenerator::TerrainBlock MapGenerator::getBlock(std::int64_t row,
 #ifdef DEBUG  // ... {{{1
          {
             constexpr float epsilon = 0.01f;
-            constexpr float maxDist = std::sqrt(2) + epsilon;
+            constexpr float maxDist = 1.414213562373 + epsilon;
             for (std::size_t n = 0; n < 4; ++n) {
                assert(dots[n] <= maxDist);
             }
