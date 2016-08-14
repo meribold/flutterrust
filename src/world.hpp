@@ -109,7 +109,6 @@ class World {
    MapGenerator mapGen;
    static constexpr std::int64_t terrainBlockSize = MapGenerator::blockSize;
    using TerrainBlock = MapGenerator::TerrainBlock;
-   TerrainBlock terrainBlock;
    // Top-left, top-right, bottom-left, bottom-right.
    std::array<TerrainBlock, 4> terrainBlocks;
    // For coordinates (x, y) where x is in the range [left, left + 2 * terrainBlockSize)

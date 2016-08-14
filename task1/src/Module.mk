@@ -22,7 +22,4 @@ $(local_program) : local_ldlibs  = $(all_ldlibs) \
 $(local_program): $(local_objects) $$(libraries) | $$(dir $$@)
 	$(CXX) $(local_ldflags) $^ $(local_ldlibs) -o $@
 
-# $(local_program): $$(filter-out $$(addsuffix .o,$$(programs)),$$(objects)) $(local_program).o $$(libraries) | $$(dir $$@)
-	# $(CXX) $(local_ldflags) $^ $(local_ldlibs) -o $@
-
 # vim: tw=90 ts=8 sts=-1 sw=3 noet

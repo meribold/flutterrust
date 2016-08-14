@@ -799,7 +799,8 @@ std::vector<World::Pos> World::getReachablePositions(const World::Pos& start,
    return positions;
 }
 
-World::Pos World::moveTowards(World::CreatureIt animalIt, const World::Pos& dest, bool run) {
+World::Pos World::moveTowards(World::CreatureIt animalIt, const World::Pos& dest,
+                              bool run) {
    assert(animalIt != creatures.end());
    const World::Pos& pos = animalIt->first;
    Creature& animal = animalIt->second;
@@ -842,7 +843,7 @@ inline std::size_t toNBits(Z z) {
    // Signed, because using an unsigned type in operations with signed ones can cause the
    // signed operand to be converted to an unsigned type ("usual arithmetic conversions").
    constexpr Z addend = Z{1} << (n - 1);  // 2^(n-1)
-   constexpr Z divisor = Z{1} << n;  // 2^n
+   constexpr Z divisor = Z{1} << n;       // 2^n
    // C++ defines the modulo operation's result to have the same sign as the divident.
    // E.g., `(-128) % 129 == -128`.
    // return (((z + addend) % divisor) + divisor) % divisor;
