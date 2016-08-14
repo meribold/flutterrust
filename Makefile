@@ -42,8 +42,9 @@ ifeq ($(DEBUG), 0)
       LDFLAGS := -O3 -flto -fuse-linker-plugin $(LDFLAGS)
    else ifeq ($(CXX), clang++)
       # There are strange linker errors when I use any level of optimization with Clang...
-      CXXFLAGS := $(CXXFLAGS)
-      LDFLAGS := $(LDFLAGS)
+      # but only on Ubuntu, not on Arch.
+      CXXFLAGS := -O3 $(CXXFLAGS)
+      LDFLAGS := -O3 $(LDFLAGS)
    endif
    OBJDIR := build/release
 else
