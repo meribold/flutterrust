@@ -285,9 +285,7 @@ void World::updateAnimal(World::CreatureIt animalIt) {
 }
 
 bool World::isCached(std::int64_t x, std::int64_t y) const {
-   // TODO: `right` and `bottom` data members.
-   return (left <= x && x < left + 2 * terrainBlockSize && top <= y &&
-           y < top + 2 * terrainBlockSize);
+   return left <= x && x < right && top <= y && y < bottom;
 }
 
 bool World::isCached(const World::Pos& pos) const { return isCached(pos[0], pos[1]); }
@@ -358,6 +356,8 @@ void World::assertCached(std::int64_t left, std::int64_t top, std::int64_t width
 
    this->top = i * terrainBlockSize;
    this->left = j * terrainBlockSize;
+   this->bottom = this->top + 2 * terrainBlockSize;
+   this->right = this->left + 2 * terrainBlockSize;
 }
 
 // Increasing x means going right, increasing y means going down.

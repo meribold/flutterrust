@@ -117,6 +117,8 @@ class World {
    // ~~MapGenerator will be invoked to update the cache~~ program will crash.
    std::int64_t top = std::numeric_limits<std::int64_t>::lowest();
    std::int64_t left = std::numeric_limits<std::int64_t>::lowest();
+   std::int64_t bottom = std::numeric_limits<std::int64_t>::lowest();
+   std::int64_t right = std::numeric_limits<std::int64_t>::lowest();
 
    // ...
    std::vector<CreatureIt> foodCache;
