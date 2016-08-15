@@ -34,8 +34,9 @@ Creature::Creature(std::uint8_t typeIndex, std::int16_t lifetime)
       typeIndex{typeIndex},
       // Offset the first time the creature can procreate by a random value.  Otherwise,
       // all creatures of the same type always produce offspring in the same step.
-      procreationOffset{
-          static_cast<uint8_t>(defaultRNDist(rNG) % getProcreationInterval())} {}
+      procreationOffset{static_cast<std::uint8_t>(
+          isPlant() ? defaultRNDist(rNG) % getProcreationInterval()
+                    : getProcreationInterval() - 1)} {}
 
 std::vector<CreatureType> Creature::creatureTypes;
 

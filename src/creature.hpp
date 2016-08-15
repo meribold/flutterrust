@@ -112,8 +112,6 @@ bool Creature::canProcreate(int step) const {
    } else {
       return procreationOffset == 0 && getRelativeLifetime() > 0.5;
    }
-   // return step % getProcreationInterval() == procreationOffset &&
-   //        (isPlant() || getRelativeLifetime() > 0.5);
 }
 
 #endif  // CREATURE_HPP_XZNFGDOY
