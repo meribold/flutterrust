@@ -90,8 +90,6 @@ World::Pos getRoamDest(const World::CreatureInfo& animalInfo) {
    return dest;
 }
 
-World::World() {}
-
 void World::step() {
    ++currentStep;
 #ifdef DEBUG  // {{{1
@@ -148,8 +146,8 @@ void World::commitStep() {
       // "If rehashing occurs due to the insertion, all iterators are invalidated".  But
       // also "[r]ehashing occurs only if the new number of elements is greater than
       // `max_load_factor() * bucket_count()`".
-      // This leads me to believe erasing and reinserting elements one a time without ever
-      // increasing the number of elements should be safe.
+      // This leads me to believe erasing and reinserting elements one at a time without
+      // ever increasing the number of elements should be safe.
       // [1]: http://en.cppreference.com/w/cpp/container/unordered_multimap/insert
       // [2]: http://en.cppreference.com/w/cpp/container/unordered_multimap/rehash
       World::Pos pos{moveeInfo.first};
