@@ -51,29 +51,6 @@ enum { name, strength, speed, lifetime, attributes, bitmap };
 }
 }
 
-/*
-enum class CTFields { name, strength, speed, lifetime, attributes, bitmap };
-*/
-
-/*
-constexpr struct {
-   std::size_t name = 0, strength = 1, speed = 2, lifetime = 3, attributes = 4,
-               bitmap = 5;
-} cTFields;
-*/
-
-/*
-class CreatureType {
-  public:
-   CreatureType() = delete;
-   CreatureType();
-
-  private:
-   using PropertyTuple = std::tuple<std::string, int, int, int, std::string, std::string>;
-   PropertyTuple propertyTuple;
-};
-*/
-
 bool CreatureAttrs::isAquatic() const { return !bitset.test(0); }
 bool CreatureAttrs::isTerrestrial() const { return bitset.test(0); }
 bool CreatureAttrs::isPlant() const { return !bitset.test(1); }
