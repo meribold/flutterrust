@@ -288,8 +288,8 @@ bool World::isCached(std::int64_t x, std::int64_t y) const {
 
 bool World::isCached(const World::Pos& pos) const { return isCached(pos[0], pos[1]); }
 
-void World::assertCached(std::int64_t left, std::int64_t top, std::int64_t width,
-                         std::int64_t height) {
+void World::updateTerrainCache(std::int64_t left, std::int64_t top, std::int64_t width,
+                               std::int64_t height) {
    std::int64_t right = left + width;
    std::int64_t bottom = top + height;
    if (isCached(left, top) && isCached(right, bottom)) {

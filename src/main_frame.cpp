@@ -269,8 +269,8 @@ void MainFrame::onPaint(wxPaintEvent&) {
    // terrain cache if necessary.  Querying terrain outside of the cached area results in
    // invalid array accesses and probably crashes the program (no bounds-checking is
    // performed).  Creatures outside of the cached area are not simulated.
-   world.assertCached(initialWorldX, worldY, (panelWidth + tileSize - 1) / tileSize,
-                      (panelHeight + tileSize - 1) / tileSize);
+   world.updateTerrainCache(initialWorldX, worldY, (panelWidth + tileSize - 1) / tileSize,
+                            (panelHeight + tileSize - 1) / tileSize);
 
    // Example: assume scrollOffX is (-33).  That means we scrolled 33 pixels to the left
    // (by moving the mouse to the right).  The value of initialWorldX is (-2), but we can

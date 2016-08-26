@@ -42,12 +42,12 @@ class World {
    bool isCached(std::int64_t x, std::int64_t y) const;
    bool isCached(const Pos&) const;
 
-   void assertCached(std::int64_t left, std::int64_t top, std::int64_t width,
-                     std::int64_t height);
+   void updateTerrainCache(std::int64_t left, std::int64_t top, std::int64_t width,
+                           std::int64_t height);
 
    // Coordinates are relative to the top-left cached terrain block.  No bounds-checking
-   // is performed.  To access coordinates outside of the cached terrain, assertCached has
-   // to be called first.
+   // is performed.  To access coordinates outside of the cached terrain,
+   // updateTerrainCache has to be called first.
    TileType getTileType(std::int64_t x, std::int64_t y) const;
    inline TileType getTileType(Pos) const;
    inline bool isWater(std::int64_t x, std::int64_t y) const;
