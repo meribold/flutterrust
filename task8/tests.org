@@ -1,0 +1,41 @@
+#+TITLE: Tests
+#+AUTHOR: Lukas Waymann
+#+EMAIL: meribold@gmail.com
+
+#+LANGUAGE: de
+
+# #+HTML_DOCTYPE: html5
+#+OPTIONS: html-preamble:t html-scripts:t html-style:t toc:nil
+#+OPTIONS: html5-fancy:t tex:t
+#+OPTIONS: author:nil timestamp:nil html-postamble:nil
+
+| Nummer | Voraussetzung                             | Durchführung                                          | Erwartung                                                              | Ergebnis |
+|--------+-------------------------------------------+-------------------------------------------------------+------------------------------------------------------------------------+----------|
+|      / | <                                         |                                                       |                                                                        |          |
+|      0 | Projektverzeichnis ist Arbeitsverzeichnis | ~make~ ausführen                                      | Release build wird erzeugt                                             | OK       |
+|      1 | Projektverzeichnis ist Arbeitsverzeichnis | ~make DEBUG=1~ ausführen                              | Debug build wird erzeugt                                               | OK       |
+|      2 | ~flutterrust~ Executable erstellt         | ~flutterrust~ ausführen                               | Fenster mit zufälliger Landschaft erscheint                            | OK       |
+|      3 | Programm gestartet                        | Linke Maustaste halten und ziehen                     | Karte wird gescrollt                                                   | OK       |
+|      4 | Programm gestartet                        | Auf Landkachel rechte Maustaste drücken               | Kontextmenü mit Landbewohnern erscheint                                | OK       |
+|      5 | Programm gestartet                        | Auf Wasserkachel rechte Maustaste drücken             | Kontextmenü mit Wasserbewohnern erscheint                              | OK       |
+|      6 | Programm gestartet                        | Im "View" Menü "Species info" auswählen               | Frame mit Informationen über Kreaturtypen erscheint/verschwindet       | OK       |
+|      7 | Programm gestartet                        | *S* drücken                                           | Frame mit Informationen über Kreaturtypen erscheint/verschwindet       | OK       |
+|      8 | Programm gestartet                        | *Ctrl+Q* drücken                                      | Programm wird beendet                                                  | OK       |
+|      9 | Programm gestartet                        | "Gras" platzieren                                     | Gras erscheint                                                         | OK       |
+|     10 | Test 9 ausgeführt                         | *F* gedrückt halten                                   | Gras verschwindet nach kurzer Zeit                                     | OK       |
+|     11 | Programm gestartet                        | "Kuh" platzieren                                      | Kuh erscheint                                                          | OK       |
+|     12 | Test 11 ausgeführt                        | *Space* drücken                                       | Kuh wandert umher                                                      | OK       |
+|     13 | Test 12 ausgeführt und Kuh lebt noch      | Etwas warten und "Gras" nahe der Kuh platzieren       | Kuh bewegt sich zum Gras, Gras verschwindet                            | OK       |
+|     14 | Test 12 ausgeführt und Kuh lebt noch      | Warten                                                | Kuh stirbt, Grafik für tote Kreatur erscheint kurz                     | OK       |
+|     15 | Test 9 ausgeführt                         | Noch 2 mal "Gras" angrenzend zum ersten platzieren    | Gras erscheint                                                         | OK       |
+|     16 | Test 15 ausgeführt                        | *Space* drücken                                       | Gras breitet sich aus                                                  | OK       |
+|     17 | Test 16 ausgeführt                        | Mehrere Emus in der Nähe des Grases platzieren        | Emus vermehren sich wenn sie sich treffen, viele Emus                  | OK       |
+|     18 | Test 17 ausgeführt                        | Mehrere Tiger in der Nähe von Emus platzieren         | Tiger vermehren sich und jagen Emus                                    | OK       |
+|     19 | Test 12 ausgeführt                        | *Space* drücken                                       | Simulation pausiert                                                    | OK       |
+|     20 | Programm gestartet                        | *Shift* halten, linke Maustaste drücken und ziehen    | Kürzester Pfad von Startkachel zur Position der Maus wird angezeigt    | OK       |
+|     21 | Test 17 ausgeführt                        | Simulation über Nacht laufen lassen                   | Kein Absturz                                                           | OK       |
+|     22 | Programm gestartet                        | Beliebig lange scrollen                               | Kein Absturz, Karte wiederholt sich nicht                              | OK       |
+|     22 | ~task1~ Executable erstellt               | Mit Argument ~CreatureTable_mitFehlern.txt~ ausführen | Ausgabe mit Fehlern und importierten Spezies erscheint                 | OK       |
+|     23 | Test 0 ausgeführt                         | ~make clean~ ausführen                                | Ausser Verzeichnissen und Links wird alles in ~build/release~ gelöscht | OK       |
+|     24 | Test 11 ausgeführt                        | Min. 3 von allen Pflanzen nahe beieinander platzieren | Kein Absturz, Simulation läuft mit normaler Geschwindigkeit            | OK       |
+|     25 | Test 24 ausgeführt                        | Mehrere verschiedene Pflanzenfresser platzieren       | Kein Absturz, Simulation läuft mit normaler Geschwindigkeit            | OK       |
