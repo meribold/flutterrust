@@ -1,6 +1,4 @@
-# flutterrust
-
-Just a university assignment.
+![](/../media/screenshot.png?raw=true)
 
 ## Building
 
