@@ -136,6 +136,7 @@ $(OBJDIR)/CreatureTable.txt: | $(OBJDIR)/task1
 # of make.
 $(prereq_files):
 
+# Enable the second expansion of prerequisites.
 .SECONDEXPANSION:
 
 # A call $(subst foo,bar,text) replaces each occurrence of 'foo' by 'bar' and does not
