@@ -9,11 +9,11 @@ class Creature {
   public:
    Creature(std::size_t typeIndex);
 
-   const CreatureType& getCreatureType(const World&) const;
    std::size_t getTypeIndex() const;
 
   private:
    const std::size_t typeIndex;
+   // friend class World;
 };
 
 #endif  // CREATURE_HPP_XZNFGDOY

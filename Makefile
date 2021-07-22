@@ -23,7 +23,7 @@ WXCONFIG  ?= wx-config
 ICUCONFIG ?= icu-config
 CPPFLAGS  += -Wall -Wextra -pedantic
 # wxWidgets' uses old-style casts, so I need to disable the warnings about them.
-CXXFLAGS  += -std=c++14 -Wno-old-style-cast
+CXXFLAGS  += -std=c++14
 LDFLAGS   +=
 LDLIBS    +=
 ARFLAGS   += cs
